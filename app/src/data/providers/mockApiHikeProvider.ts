@@ -1,23 +1,6 @@
 import type { Hike, HikeProvider } from "../../types";
 import { normalizeRawHike, type RawHikeRecord } from "../normalizeHike";
-
-function cloneForBaseLocation(hike: Hike, baseLocationLabel: string): Hike {
-  const suffix = baseLocationLabel.trim();
-  if (!suffix) {
-    return hike;
-  }
-
-  return {
-    ...hike,
-    name: `${hike.name} near ${suffix}`,
-    summary: `${hike.summary} Suggested for ${suffix}.`,
-    trailhead: {
-      ...hike.trailhead,
-      label: `${hike.trailhead.label} near ${suffix}`,
-      source: `${hike.trailhead.source} · matched for ${suffix}`
-    }
-  };
-}
+import { isStavangerLocation, stavangerRawHikeRecords } from "../locationHikeCatalog";
 
 const rawHikeRecords: RawHikeRecord[] = [
   {
@@ -62,7 +45,7 @@ const rawHikeRecords: RawHikeRecord[] = [
 ];
 
 export class MockApiHikeProvider implements HikeProvider {
-  constructor(private readonly records: unknown[] = rawHikeRecords) {}
+  constructor(private readonly records: unknown[] | null = null) {}
 
   async listNearbyHikes(baseLocationLabel: string): Promise<Hike[]> {
     await new Promise((resolve) => setTimeout(resolve, 240));
@@ -72,7 +55,9 @@ export class MockApiHikeProvider implements HikeProvider {
       throw new Error("Mock API unavailable");
     }
 
-    const normalized = this.records.flatMap((record) => {
+    const selectedRecords = this.records ?? (isStavangerLocation(baseLocationLabel) ? stavangerRawHikeRecords : rawHikeRecords);
+
+    const normalized = selectedRecords.flatMap((record) => {
       try {
         return [normalizeRawHike(record)];
       } catch {
@@ -84,7 +69,7 @@ export class MockApiHikeProvider implements HikeProvider {
       throw new Error("Mock API returned no valid records");
     }
 
-    return normalized.map((hike) => cloneForBaseLocation(hike, baseLocationLabel));
+    return normalized;
   }
 }
 

@@ -21,13 +21,14 @@ const validRecord = {
 };
 
 describe("MockApiHikeProvider", () => {
-  it("tailors returned hikes to the requested base location", async () => {
-    const provider = new MockApiHikeProvider([validRecord]);
+  it("returns Stavanger-area hikes for Stavanger base location", async () => {
+    const provider = new MockApiHikeProvider();
     const hikes = await provider.listNearbyHikes("Stavanger");
 
-    expect(hikes[0]?.name).toContain("Stavanger");
-    expect(hikes[0]?.summary).toContain("Stavanger");
-    expect(hikes[0]?.trailhead.label).toContain("Stavanger");
+    expect(hikes.map((hike) => hike.name)).toEqual(
+      expect.arrayContaining(["Preikestolen Trail", "Kjeragbolten Trail", "Dalsnuten Loop"])
+    );
+    expect(hikes[0]?.trailhead.coordinates.lat).toBeGreaterThan(58);
   });
 
   it("skips malformed records and returns valid normalized hikes", async () => {

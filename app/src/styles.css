@@ -67,6 +67,23 @@ p {
   align-items: end;
 }
 
+.recent-locations {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.recent-chip {
+  min-height: 44px;
+  padding: 0.35rem 0.65rem;
+}
+
 .status-note {
   color: var(--muted);
   font-size: 0.95rem;

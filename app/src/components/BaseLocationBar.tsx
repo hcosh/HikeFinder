@@ -3,14 +3,18 @@ import { useEffect, useState } from "react";
 
 interface Props {
   baseLocation: BaseLocation;
+  recentLocations: string[];
   onApplyManualBaseLocation: (label: string) => void;
+  onApplyRecentBaseLocation: (label: string) => void;
   onUseCurrentLocation: () => void;
   locating: boolean;
 }
 
 export default function BaseLocationBar({
   baseLocation,
+  recentLocations,
   onApplyManualBaseLocation,
+  onApplyRecentBaseLocation,
   onUseCurrentLocation,
   locating
 }: Props) {
@@ -47,6 +51,23 @@ export default function BaseLocationBar({
       <button type="button" onClick={onUseCurrentLocation} disabled={locating}>
         {locating ? "Locating..." : "Use current location"}
       </button>
+      {recentLocations.length > 0 && (
+        <div className="recent-locations">
+          <p className="status-note">Recent:</p>
+          <div className="recent-list">
+            {recentLocations.map((label) => (
+              <button
+                key={label}
+                type="button"
+                className="secondary recent-chip"
+                onClick={() => onApplyRecentBaseLocation(label)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

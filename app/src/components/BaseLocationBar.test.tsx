@@ -12,12 +12,15 @@ describe("BaseLocationBar", () => {
 
   it("applies manual location when OK button is pressed", async () => {
     const onApplyManualBaseLocation = vi.fn();
+    const onApplyRecentBaseLocation = vi.fn();
     const user = userEvent.setup();
 
     render(
       <BaseLocationBar
         baseLocation={{ label: "Current area" }}
+        recentLocations={[]}
         onApplyManualBaseLocation={onApplyManualBaseLocation}
+        onApplyRecentBaseLocation={onApplyRecentBaseLocation}
         onUseCurrentLocation={() => {}}
         locating={false}
       />
@@ -36,12 +39,15 @@ describe("BaseLocationBar", () => {
 
   it("applies manual location when Enter is pressed", async () => {
     const onApplyManualBaseLocation = vi.fn();
+    const onApplyRecentBaseLocation = vi.fn();
     const user = userEvent.setup();
 
     render(
       <BaseLocationBar
         baseLocation={{ label: "Current area" }}
+        recentLocations={[]}
         onApplyManualBaseLocation={onApplyManualBaseLocation}
+        onApplyRecentBaseLocation={onApplyRecentBaseLocation}
         onUseCurrentLocation={() => {}}
         locating={false}
       />
@@ -53,5 +59,27 @@ describe("BaseLocationBar", () => {
 
     expect(onApplyManualBaseLocation).toHaveBeenCalledTimes(1);
     expect(onApplyManualBaseLocation).toHaveBeenCalledWith("Wailea");
+  });
+
+  it("applies recent location on one tap", async () => {
+    const onApplyManualBaseLocation = vi.fn();
+    const onApplyRecentBaseLocation = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <BaseLocationBar
+        baseLocation={{ label: "Current area" }}
+        recentLocations={["Kapalua", "Wailea"]}
+        onApplyManualBaseLocation={onApplyManualBaseLocation}
+        onApplyRecentBaseLocation={onApplyRecentBaseLocation}
+        onUseCurrentLocation={() => {}}
+        locating={false}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Kapalua" }));
+
+    expect(onApplyRecentBaseLocation).toHaveBeenCalledTimes(1);
+    expect(onApplyRecentBaseLocation).toHaveBeenCalledWith("Kapalua");
   });
 });

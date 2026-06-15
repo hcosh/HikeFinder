@@ -15,7 +15,9 @@ import { filterAndSortHikes } from "./lib/filterHikes";
 import {
   clearAppState,
   getActiveTab,
+  getRecentBaseLocations,
   getSavedBaseLocation,
+  pushRecentBaseLocation,
   setActiveTab,
   setSavedBaseLocation,
   type ActiveTab
@@ -41,6 +43,9 @@ function App() {
   const [selectedHikeId, setSelectedHikeId] = useState<string>("");
   const [shortlist, setShortlistState] = useState<string[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
+  const [recentBaseLocations, setRecentBaseLocations] = useState<string[]>(() =>
+    getRecentBaseLocations()
+  );
   const [statusMessage, setStatusMessage] = useState("");
   const { coords, error, loading, requestLocation } = useGeolocation();
 
@@ -66,6 +71,7 @@ function App() {
         label: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
         coordinates: coords
       });
+      setRecentBaseLocations(pushRecentBaseLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`));
       trackEvent("base_location_set_current", {
         lat: Number(coords.lat.toFixed(4)),
         lng: Number(coords.lng.toFixed(4))
@@ -131,7 +137,14 @@ function App() {
 
   const applyManualBaseLocation = (label: string) => {
     setBaseLocation({ label });
+    setRecentBaseLocations(pushRecentBaseLocation(label));
     trackEvent("base_location_set_manual", { label });
+  };
+
+  const applyRecentBaseLocation = (label: string) => {
+    setBaseLocation({ label });
+    setRecentBaseLocations(pushRecentBaseLocation(label));
+    trackEvent("base_location_set_recent", { label });
   };
 
   const exportTelemetry = () => {
@@ -156,6 +169,7 @@ function App() {
     setActiveTabState("browse");
     setFilters(defaultFilters);
     setSelectedHikeId("");
+    setRecentBaseLocations([]);
     setStatusMessage("Local data cleared.");
   };
 
@@ -194,7 +208,9 @@ function App() {
 
       <BaseLocationBar
         baseLocation={baseLocation}
+        recentLocations={recentBaseLocations}
         onApplyManualBaseLocation={applyManualBaseLocation}
+        onApplyRecentBaseLocation={applyRecentBaseLocation}
         onUseCurrentLocation={requestLocation}
         locating={loading}
       />

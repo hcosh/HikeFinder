@@ -21,6 +21,15 @@ const validRecord = {
 };
 
 describe("MockApiHikeProvider", () => {
+  it("tailors returned hikes to the requested base location", async () => {
+    const provider = new MockApiHikeProvider([validRecord]);
+    const hikes = await provider.listNearbyHikes("Stavanger");
+
+    expect(hikes[0]?.name).toContain("Stavanger");
+    expect(hikes[0]?.summary).toContain("Stavanger");
+    expect(hikes[0]?.trailhead.label).toContain("Stavanger");
+  });
+
   it("skips malformed records and returns valid normalized hikes", async () => {
     const provider = new MockApiHikeProvider([
       validRecord,

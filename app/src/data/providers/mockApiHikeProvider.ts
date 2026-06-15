@@ -1,6 +1,24 @@
 import type { Hike, HikeProvider } from "../../types";
 import { normalizeRawHike, type RawHikeRecord } from "../normalizeHike";
 
+function cloneForBaseLocation(hike: Hike, baseLocationLabel: string): Hike {
+  const suffix = baseLocationLabel.trim();
+  if (!suffix) {
+    return hike;
+  }
+
+  return {
+    ...hike,
+    name: `${hike.name} near ${suffix}`,
+    summary: `${hike.summary} Suggested for ${suffix}.`,
+    trailhead: {
+      ...hike.trailhead,
+      label: `${hike.trailhead.label} near ${suffix}`,
+      source: `${hike.trailhead.source} · matched for ${suffix}`
+    }
+  };
+}
+
 const rawHikeRecords: RawHikeRecord[] = [
   {
     id: "waihee-ridge",
@@ -66,7 +84,7 @@ export class MockApiHikeProvider implements HikeProvider {
       throw new Error("Mock API returned no valid records");
     }
 
-    return normalized;
+    return normalized.map((hike) => cloneForBaseLocation(hike, baseLocationLabel));
   }
 }
 

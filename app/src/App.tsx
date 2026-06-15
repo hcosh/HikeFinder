@@ -85,17 +85,20 @@ function App() {
     const loadHikes = async () => {
       setHikesLoading(true);
       setHikesError("");
+      setStatusMessage(`Loading hikes for ${baseLocation.label}...`);
       try {
         const result = await defaultHikeProvider.listNearbyHikes(baseLocation.label);
         if (!cancelled) {
           setHikeResults(result);
           setSelectedHikeId((prev) => prev || result[0]?.id || "");
           trackEvent("hikes_loaded", { count: result.length, base: baseLocation.label });
+          setStatusMessage(`Loaded hikes for ${baseLocation.label}.`);
         }
       } catch {
         if (!cancelled) {
           setHikesError("Unable to load hikes right now. Try again.");
           trackEvent("hikes_load_failed", { base: baseLocation.label });
+          setStatusMessage(`Failed to load hikes for ${baseLocation.label}.`);
         }
       } finally {
         if (!cancelled) {
@@ -228,7 +231,9 @@ function App() {
 
       <section className="layout">
         <section className="list-pane">
-          <h2>{activeTab === "browse" ? "Top nearby hikes" : "Your shortlist"}</h2>
+          <h2>
+            {activeTab === "browse" ? `Top nearby hikes for ${baseLocation.label}` : "Your shortlist"}
+          </h2>
           {hikesLoading ? (
             <div className="card empty-state">
               <p>Loading hikes for {baseLocation.label}...</p>

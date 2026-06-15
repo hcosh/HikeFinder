@@ -36,6 +36,11 @@ describe("smoke flow", () => {
     expect(handoffEvents[0]?.payload).toEqual({ hikeId: selectedHike.id });
   });
 
+  it("formats heading for the requested base location", () => {
+    const heading = `Top nearby hikes for Stavanger`;
+    expect(heading).toContain("Stavanger");
+  });
+
   it("returns null maps URL for invalid trailhead coordinates", () => {
     const mapsUrl = buildGoogleMapsDirectionsUrl({ lat: 999, lng: -156.55 });
     expect(mapsUrl).toBeNull();

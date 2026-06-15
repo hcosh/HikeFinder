@@ -21,7 +21,18 @@ const createHike = (coords: { lat: number; lng: number }): Hike => ({
   trailhead: {
     label: "Coastal Trailhead",
     coordinates: coords,
-    transitOptions: ["Bus to the trailhead area, then a short walk."],
+    transitOptions: [
+      {
+        mode: "bus",
+        routeLabel: "Kolumbus 23",
+        boardAt: "Stavanger sentrum",
+        alightAt: "Gramstad stop",
+        walkMinutes: 7,
+        durationMinutes: 35,
+        frequency: "Every 30 minutes",
+        notes: "Most reliable local option."
+      }
+    ],
     qualityConfidence: 0.93,
     source: "test"
   }
@@ -52,6 +63,8 @@ describe("HikeDetail", () => {
     );
 
     expect(html).toContain("Public transport:");
-    expect(html).toContain("Bus to the trailhead area");
+    expect(html).toContain("Kolumbus 23");
+    expect(html).toContain("Stavanger sentrum");
+    expect(html).toContain("~35 min total");
   });
 });

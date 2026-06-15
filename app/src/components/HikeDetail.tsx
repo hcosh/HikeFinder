@@ -46,11 +46,22 @@ export default function HikeDetail({ hike, shortlisted, onToggleShortlist }: Pro
       <p>Trailhead: {hike.trailhead.label}</p>
       {hike.trailhead.parkingNote && <p>Parking: {hike.trailhead.parkingNote}</p>}
       {hike.trailhead.transitOptions && hike.trailhead.transitOptions.length > 0 && (
-        <div>
+        <div className="transit-block">
           <p>Public transport:</p>
-          <ul>
+          <ul className="transit-list">
             {hike.trailhead.transitOptions.map((option) => (
-              <li key={option}>{option}</li>
+              <li key={`${option.routeLabel}-${option.boardAt}-${option.alightAt}`}>
+                <p>
+                  <strong>{option.routeLabel}</strong> ({option.mode})
+                </p>
+                <p>
+                  {option.boardAt} to {option.alightAt}
+                </p>
+                <p>
+                  ~{option.durationMinutes} min total · {option.frequency} · {option.walkMinutes} min walk
+                </p>
+                {option.notes && <p>{option.notes}</p>}
+              </li>
             ))}
           </ul>
         </div>

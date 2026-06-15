@@ -24,7 +24,18 @@ export const stavangerHikes: Hike[] = [
       label: "Preikestolen Parking",
       coordinates: { lat: 58.9869, lng: 6.1889 },
       parkingNote: "Large designated lot near the trail start.",
-      transitOptions: ["Kolumbus bus from Stavanger to Tau, then ferry or shuttle connection to the trail area."],
+      transitOptions: [
+        {
+          mode: "mixed",
+          routeLabel: "Kolumbus bus + ferry + shuttle",
+          boardAt: "Stavanger bus terminal",
+          alightAt: "Preikestolen BaseCamp",
+          walkMinutes: 10,
+          durationMinutes: 95,
+          frequency: "Every 60 minutes in season",
+          notes: "Check seasonal ferry-shuttle coordination before departure."
+        }
+      ],
       qualityConfidence: 0.98,
       source: "Visit Stavanger trail guide"
     }
@@ -44,7 +55,18 @@ export const stavangerHikes: Hike[] = [
       label: "Øygardstøl Trailhead",
       coordinates: { lat: 59.0223, lng: 6.5784 },
       parkingNote: "Paid parking at the mountain lodge.",
-      transitOptions: ["Seasonal tour bus or organized shuttle from Stavanger; private transit is the practical option."],
+      transitOptions: [
+        {
+          mode: "shuttle",
+          routeLabel: "Seasonal Lysebotn mountain shuttle",
+          boardAt: "Stavanger city center pickup",
+          alightAt: "Øygardstøl trailhead",
+          walkMinutes: 4,
+          durationMinutes: 150,
+          frequency: "1-2 departures daily (seasonal)",
+          notes: "Advance booking recommended; weather cancellations possible."
+        }
+      ],
       qualityConfidence: 0.97,
       source: "Region Stavanger trail guide"
     }
@@ -64,7 +86,18 @@ export const stavangerHikes: Hike[] = [
       label: "Gramstad Trailhead",
       coordinates: { lat: 58.9187, lng: 5.7319 },
       parkingNote: "Trailhead parking at Gramstad.",
-      transitOptions: ["Local bus toward Sandnes/Gramstad, then a short walk from the nearest stop."],
+      transitOptions: [
+        {
+          mode: "bus",
+          routeLabel: "Kolumbus bus 23",
+          boardAt: "Stavanger sentrum",
+          alightAt: "Gramstad stop",
+          walkMinutes: 7,
+          durationMinutes: 35,
+          frequency: "Every 30 minutes",
+          notes: "Most reliable public option for a half-day local hike."
+        }
+      ],
       qualityConfidence: 0.94,
       source: "Local hiking association"
     }
@@ -88,7 +121,18 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 58.9869,
       lng: 6.1889,
       parkingNote: "Large designated lot near the trail start.",
-      transitOptions: ["Kolumbus bus from Stavanger to Tau, then ferry or shuttle connection to the trail area."],
+      transitOptions: [
+        {
+          mode: "mixed",
+          routeLabel: "Kolumbus bus + ferry + shuttle",
+          boardAt: "Stavanger bus terminal",
+          alightAt: "Preikestolen BaseCamp",
+          walkMinutes: 10,
+          durationMinutes: 95,
+          frequency: "Every 60 minutes in season",
+          notes: "Check seasonal ferry-shuttle coordination before departure."
+        }
+      ],
       qualityConfidence: 0.98,
       source: "Visit Stavanger trail guide"
     }
@@ -109,7 +153,18 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 59.0223,
       lng: 6.5784,
       parkingNote: "Paid parking at the mountain lodge.",
-      transitOptions: ["Seasonal tour bus or organized shuttle from Stavanger; private transit is the practical option."],
+      transitOptions: [
+        {
+          mode: "shuttle",
+          routeLabel: "Seasonal Lysebotn mountain shuttle",
+          boardAt: "Stavanger city center pickup",
+          alightAt: "Øygardstøl trailhead",
+          walkMinutes: 4,
+          durationMinutes: 150,
+          frequency: "1-2 departures daily (seasonal)",
+          notes: "Advance booking recommended; weather cancellations possible."
+        }
+      ],
       qualityConfidence: 0.97,
       source: "Region Stavanger trail guide"
     }
@@ -130,7 +185,18 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 58.9187,
       lng: 5.7319,
       parkingNote: "Trailhead parking at Gramstad.",
-      transitOptions: ["Local bus toward Sandnes/Gramstad, then a short walk from the nearest stop."],
+      transitOptions: [
+        {
+          mode: "bus",
+          routeLabel: "Kolumbus bus 23",
+          boardAt: "Stavanger sentrum",
+          alightAt: "Gramstad stop",
+          walkMinutes: 7,
+          durationMinutes: 35,
+          frequency: "Every 30 minutes",
+          notes: "Most reliable public option for a half-day local hike."
+        }
+      ],
       qualityConfidence: 0.94,
       source: "Local hiking association"
     }

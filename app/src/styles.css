@@ -159,6 +159,23 @@ button.secondary {
   align-content: start;
 }
 
+.transit-block {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.transit-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.transit-list li {
+  display: grid;
+  gap: 0.2rem;
+}
+
 .map {
   height: 220px;
   border-radius: 10px;

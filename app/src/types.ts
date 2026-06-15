@@ -5,11 +5,22 @@ export interface Coordinates {
   lng: number;
 }
 
+export interface TransitOption {
+  mode: "bus" | "ferry" | "train" | "shuttle" | "mixed";
+  routeLabel: string;
+  boardAt: string;
+  alightAt: string;
+  walkMinutes: number;
+  durationMinutes: number;
+  frequency: string;
+  notes?: string;
+}
+
 export interface Trailhead {
   label: string;
   coordinates: Coordinates;
   parkingNote?: string;
-  transitOptions?: string[];
+  transitOptions?: TransitOption[];
   qualityConfidence: number;
   source: string;
 }

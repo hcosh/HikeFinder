@@ -16,7 +16,20 @@ const RawHikeSchema = z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
     parkingNote: z.string().optional(),
-    transitOptions: z.array(z.string()).optional(),
+    transitOptions: z
+      .array(
+        z.object({
+          mode: z.enum(["bus", "ferry", "train", "shuttle", "mixed"]),
+          routeLabel: z.string(),
+          boardAt: z.string(),
+          alightAt: z.string(),
+          walkMinutes: z.number().int().nonnegative(),
+          durationMinutes: z.number().int().positive(),
+          frequency: z.string(),
+          notes: z.string().optional()
+        })
+      )
+      .optional(),
     qualityConfidence: z.number().min(0).max(1),
     source: z.string()
   })

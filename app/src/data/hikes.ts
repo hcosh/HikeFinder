@@ -15,7 +15,20 @@ const HikeSchema = z.object({
     label: z.string(),
     coordinates: z.object({ lat: z.number(), lng: z.number() }),
     parkingNote: z.string().optional(),
-      transitOptions: z.array(z.string()).optional(),
+      transitOptions: z
+        .array(
+          z.object({
+            mode: z.enum(["bus", "ferry", "train", "shuttle", "mixed"]),
+            routeLabel: z.string(),
+            boardAt: z.string(),
+            alightAt: z.string(),
+            walkMinutes: z.number().int().nonnegative(),
+            durationMinutes: z.number().int().positive(),
+            frequency: z.string(),
+            notes: z.string().optional()
+          })
+        )
+        .optional(),
     qualityConfidence: z.number().min(0).max(1),
     source: z.string()
   })
@@ -37,7 +50,18 @@ const rawHikes: Hike[] = [
       label: "Waihee Ridge Trailhead",
       coordinates: { lat: 20.9423, lng: -156.5416 },
       parkingNote: "Small lot. Arrive early.",
-      transitOptions: ["Route 39 bus to Wailuku, then rideshare or taxi to trailhead."],
+      transitOptions: [
+        {
+          mode: "mixed",
+          routeLabel: "Maui Bus 39 + taxi",
+          boardAt: "Queen Kaahumanu Center",
+          alightAt: "Wailuku Transfer Point",
+          walkMinutes: 4,
+          durationMinutes: 55,
+          frequency: "Every 60 minutes",
+          notes: "From Wailuku, use a short taxi or rideshare for the last mountain section."
+        }
+      ],
       qualityConfidence: 0.95,
       source: "Maui County trail directory"
     }
@@ -57,7 +81,18 @@ const rawHikes: Hike[] = [
       label: "Lahaina Pali Trail (Maalaea side)",
       coordinates: { lat: 20.7905, lng: -156.4978 },
       parkingNote: "Limited shoulder parking.",
-      transitOptions: ["Local bus to Maalaea, then short taxi or rideshare hop to the trailhead."],
+      transitOptions: [
+        {
+          mode: "mixed",
+          routeLabel: "Maui Bus 15 + rideshare",
+          boardAt: "Wharf Cinema Center (Lahaina)",
+          alightAt: "Maalaea Harbor stop",
+          walkMinutes: 8,
+          durationMinutes: 45,
+          frequency: "Every 60 minutes",
+          notes: "Use a rideshare for the final segment along Honoapiilani Hwy shoulder."
+        }
+      ],
       qualityConfidence: 0.88,
       source: "Hiking community dataset"
     }
@@ -77,7 +112,18 @@ const rawHikes: Hike[] = [
       label: "Kapalua Coastal Trail Start",
       coordinates: { lat: 20.9959, lng: -156.6662 },
       parkingNote: "Resort-area parking nearby.",
-      transitOptions: ["Public bus to Kapalua resort area, then a short walk to the trail start."],
+      transitOptions: [
+        {
+          mode: "bus",
+          routeLabel: "Maui Bus 29",
+          boardAt: "Whalers Village stop",
+          alightAt: "Kapalua West Maui Airport stop",
+          walkMinutes: 12,
+          durationMinutes: 35,
+          frequency: "Every 60 minutes",
+          notes: "Mostly flat coastal walk from the stop to trail access."
+        }
+      ],
       qualityConfidence: 0.93,
       source: "Destination trail map"
     }
@@ -97,7 +143,18 @@ const rawHikes: Hike[] = [
       label: "Makawao Forest Reserve Entrance",
       coordinates: { lat: 20.8543, lng: -156.3043 },
       parkingNote: "Parking lot at reserve entrance.",
-      transitOptions: ["Bus to Makawao town, then taxi or rideshare to the reserve entrance."],
+      transitOptions: [
+        {
+          mode: "mixed",
+          routeLabel: "Maui Bus 35 + taxi",
+          boardAt: "Kahului Transit Center",
+          alightAt: "Makawao Library stop",
+          walkMinutes: 6,
+          durationMinutes: 50,
+          frequency: "Every 90 minutes",
+          notes: "Last section to the reserve gate is best completed by taxi/rideshare."
+        }
+      ],
       qualityConfidence: 0.91,
       source: "State reserve metadata"
     }

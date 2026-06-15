@@ -5,16 +5,22 @@ import HikeCard from "./components/HikeCard";
 import HikeDetail from "./components/HikeDetail";
 import { defaultHikeProvider } from "./data/providers";
 import { useGeolocation } from "./hooks/useGeolocation";
-import { downloadTelemetryEvents, getTelemetryEvents, trackEvent } from "./lib/telemetry";
+import {
+  clearTelemetryEvents,
+  downloadTelemetryEvents,
+  getTelemetryEvents,
+  trackEvent
+} from "./lib/telemetry";
 import { filterAndSortHikes } from "./lib/filterHikes";
 import {
+  clearAppState,
   getActiveTab,
   getSavedBaseLocation,
   setActiveTab,
   setSavedBaseLocation,
   type ActiveTab
 } from "./lib/appStateStore";
-import { getShortlist, setShortlist } from "./lib/shortlistStore";
+import { clearShortlist, getShortlist, setShortlist } from "./lib/shortlistStore";
 import type { BaseLocation, Hike, HikeFilters } from "./types";
 
 const defaultFilters: HikeFilters = {
@@ -35,6 +41,7 @@ function App() {
   const [selectedHikeId, setSelectedHikeId] = useState<string>("");
   const [shortlist, setShortlistState] = useState<string[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
+  const [statusMessage, setStatusMessage] = useState("");
   const { coords, error, loading, requestLocation } = useGeolocation();
 
   useEffect(() => {
@@ -131,6 +138,25 @@ function App() {
     const eventCount = getTelemetryEvents().length;
     const success = downloadTelemetryEvents();
     trackEvent("telemetry_exported", { success, eventCount });
+    setStatusMessage(success ? "Telemetry export downloaded." : "Unable to export telemetry.");
+  };
+
+  const clearAllLocalData = () => {
+    const confirmed = window.confirm("Clear all local app data on this device?");
+    if (!confirmed) {
+      return;
+    }
+
+    clearAppState();
+    clearShortlist();
+    clearTelemetryEvents();
+
+    setBaseLocation({ label: "Current area" });
+    setShortlistState([]);
+    setActiveTabState("browse");
+    setFilters(defaultFilters);
+    setSelectedHikeId("");
+    setStatusMessage("Local data cleared.");
   };
 
   return (
@@ -138,9 +164,15 @@ function App() {
       <header>
         <h1>Holiday Hiking Planner</h1>
         <p>Find a highly rated nearby hike and hand off directions to Google Maps.</p>
-        <button type="button" className="secondary" onClick={exportTelemetry}>
-          Export telemetry JSON
-        </button>
+        <div className="header-actions">
+          <button type="button" className="secondary" onClick={exportTelemetry}>
+            Export telemetry JSON
+          </button>
+          <button type="button" className="secondary" onClick={clearAllLocalData}>
+            Clear local data
+          </button>
+        </div>
+        {statusMessage && <p className="status-note">{statusMessage}</p>}
       </header>
 
       <section className="tab-row" aria-label="Planner sections">

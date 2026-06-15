@@ -16,3 +16,7 @@ export function getShortlist(): string[] {
 export function setShortlist(ids: string[]): void {
   localStorage.setItem(SHORTLIST_KEY, JSON.stringify(ids));
 }
+
+export function clearShortlist(): void {
+  localStorage.removeItem(SHORTLIST_KEY);
+}

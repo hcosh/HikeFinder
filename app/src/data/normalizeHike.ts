@@ -16,6 +16,7 @@ const RawHikeSchema = z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
     parkingNote: z.string().optional(),
+    transitOptions: z.array(z.string()).optional(),
     qualityConfidence: z.number().min(0).max(1),
     source: z.string()
   })
@@ -43,6 +44,7 @@ export function normalizeRawHike(raw: unknown): Hike {
         lng: parsed.trailhead.lng
       },
       parkingNote: parsed.trailhead.parkingNote,
+      transitOptions: parsed.trailhead.transitOptions,
       qualityConfidence: parsed.trailhead.qualityConfidence,
       source: parsed.trailhead.source
     }

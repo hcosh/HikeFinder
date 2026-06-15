@@ -21,6 +21,7 @@ const createHike = (coords: { lat: number; lng: number }): Hike => ({
   trailhead: {
     label: "Coastal Trailhead",
     coordinates: coords,
+    transitOptions: ["Bus to the trailhead area, then a short walk."],
     qualityConfidence: 0.93,
     source: "test"
   }
@@ -43,5 +44,14 @@ describe("HikeDetail", () => {
 
     expect(html).toContain("Copy trailhead coordinates");
     expect(html).not.toContain("Open in Google Maps");
+  });
+
+  it("shows public transport options when available", () => {
+    const html = renderToStaticMarkup(
+      <HikeDetail hike={createHike({ lat: 20.99, lng: -156.66 })} shortlisted={false} onToggleShortlist={() => {}} />
+    );
+
+    expect(html).toContain("Public transport:");
+    expect(html).toContain("Bus to the trailhead area");
   });
 });

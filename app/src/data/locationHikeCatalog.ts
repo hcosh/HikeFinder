@@ -24,6 +24,7 @@ export const stavangerHikes: Hike[] = [
       label: "Preikestolen Parking",
       coordinates: { lat: 58.9869, lng: 6.1889 },
       parkingNote: "Large designated lot near the trail start.",
+      transitOptions: ["Kolumbus bus from Stavanger to Tau, then ferry or shuttle connection to the trail area."],
       qualityConfidence: 0.98,
       source: "Visit Stavanger trail guide"
     }
@@ -43,6 +44,7 @@ export const stavangerHikes: Hike[] = [
       label: "Øygardstøl Trailhead",
       coordinates: { lat: 59.0223, lng: 6.5784 },
       parkingNote: "Paid parking at the mountain lodge.",
+      transitOptions: ["Seasonal tour bus or organized shuttle from Stavanger; private transit is the practical option."],
       qualityConfidence: 0.97,
       source: "Region Stavanger trail guide"
     }
@@ -62,6 +64,7 @@ export const stavangerHikes: Hike[] = [
       label: "Gramstad Trailhead",
       coordinates: { lat: 58.9187, lng: 5.7319 },
       parkingNote: "Trailhead parking at Gramstad.",
+      transitOptions: ["Local bus toward Sandnes/Gramstad, then a short walk from the nearest stop."],
       qualityConfidence: 0.94,
       source: "Local hiking association"
     }
@@ -85,6 +88,7 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 58.9869,
       lng: 6.1889,
       parkingNote: "Large designated lot near the trail start.",
+      transitOptions: ["Kolumbus bus from Stavanger to Tau, then ferry or shuttle connection to the trail area."],
       qualityConfidence: 0.98,
       source: "Visit Stavanger trail guide"
     }
@@ -105,6 +109,7 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 59.0223,
       lng: 6.5784,
       parkingNote: "Paid parking at the mountain lodge.",
+      transitOptions: ["Seasonal tour bus or organized shuttle from Stavanger; private transit is the practical option."],
       qualityConfidence: 0.97,
       source: "Region Stavanger trail guide"
     }
@@ -125,6 +130,7 @@ export const stavangerRawHikeRecords: RawHikeRecord[] = [
       lat: 58.9187,
       lng: 5.7319,
       parkingNote: "Trailhead parking at Gramstad.",
+      transitOptions: ["Local bus toward Sandnes/Gramstad, then a short walk from the nearest stop."],
       qualityConfidence: 0.94,
       source: "Local hiking association"
     }

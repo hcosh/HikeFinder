@@ -45,6 +45,16 @@ export default function HikeDetail({ hike, shortlisted, onToggleShortlist }: Pro
       <p>Highlights: {hike.highlights.join(" · ")}</p>
       <p>Trailhead: {hike.trailhead.label}</p>
       {hike.trailhead.parkingNote && <p>Parking: {hike.trailhead.parkingNote}</p>}
+      {hike.trailhead.transitOptions && hike.trailhead.transitOptions.length > 0 && (
+        <div>
+          <p>Public transport:</p>
+          <ul>
+            {hike.trailhead.transitOptions.map((option) => (
+              <li key={option}>{option}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p>
         Trailhead confidence: {(hike.trailhead.qualityConfidence * 100).toFixed(0)}% · Source: {hike.trailhead.source}
       </p>

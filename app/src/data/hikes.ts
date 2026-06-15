@@ -15,6 +15,7 @@ const HikeSchema = z.object({
     label: z.string(),
     coordinates: z.object({ lat: z.number(), lng: z.number() }),
     parkingNote: z.string().optional(),
+      transitOptions: z.array(z.string()).optional(),
     qualityConfidence: z.number().min(0).max(1),
     source: z.string()
   })
@@ -36,6 +37,7 @@ const rawHikes: Hike[] = [
       label: "Waihee Ridge Trailhead",
       coordinates: { lat: 20.9423, lng: -156.5416 },
       parkingNote: "Small lot. Arrive early.",
+      transitOptions: ["Route 39 bus to Wailuku, then rideshare or taxi to trailhead."],
       qualityConfidence: 0.95,
       source: "Maui County trail directory"
     }
@@ -55,6 +57,7 @@ const rawHikes: Hike[] = [
       label: "Lahaina Pali Trail (Maalaea side)",
       coordinates: { lat: 20.7905, lng: -156.4978 },
       parkingNote: "Limited shoulder parking.",
+      transitOptions: ["Local bus to Maalaea, then short taxi or rideshare hop to the trailhead."],
       qualityConfidence: 0.88,
       source: "Hiking community dataset"
     }
@@ -74,6 +77,7 @@ const rawHikes: Hike[] = [
       label: "Kapalua Coastal Trail Start",
       coordinates: { lat: 20.9959, lng: -156.6662 },
       parkingNote: "Resort-area parking nearby.",
+      transitOptions: ["Public bus to Kapalua resort area, then a short walk to the trail start."],
       qualityConfidence: 0.93,
       source: "Destination trail map"
     }
@@ -93,6 +97,7 @@ const rawHikes: Hike[] = [
       label: "Makawao Forest Reserve Entrance",
       coordinates: { lat: 20.8543, lng: -156.3043 },
       parkingNote: "Parking lot at reserve entrance.",
+      transitOptions: ["Bus to Makawao town, then taxi or rideshare to the reserve entrance."],
       qualityConfidence: 0.91,
       source: "State reserve metadata"
     }

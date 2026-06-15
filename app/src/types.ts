@@ -9,6 +9,7 @@ export interface Trailhead {
   label: string;
   coordinates: Coordinates;
   parkingNote?: string;
+  transitOptions?: string[];
   qualityConfidence: number;
   source: string;
 }

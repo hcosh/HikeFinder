@@ -17,6 +17,7 @@ describe("normalizeRawHike", () => {
         name: "Twin Falls Trailhead",
         lat: 20.99,
         lng: -156.12,
+        transitOptions: ["Route 39 bus to Wailuku, then rideshare or taxi to trailhead."],
         qualityConfidence: 0.9,
         source: "mock-api"
       }
@@ -36,6 +37,7 @@ describe("normalizeRawHike", () => {
         label: "Twin Falls Trailhead",
         coordinates: { lat: 20.99, lng: -156.12 },
         parkingNote: undefined,
+        transitOptions: ["Route 39 bus to Wailuku, then rideshare or taxi to trailhead."],
         qualityConfidence: 0.9,
         source: "mock-api"
       }

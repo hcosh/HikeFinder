@@ -1,0 +1,195 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --text: #12202f;
+  --muted: #526274;
+  --accent: #0e7a5f;
+  --accent-soft: #daf4ea;
+  --border: #d8e0e7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at 15% 20%, #e4f4ff 0, var(--bg) 55%);
+  color: var(--text);
+}
+
+.app-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.tab-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.tab-active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.base-location {
+  grid-template-columns: 1fr auto auto;
+  align-items: end;
+}
+
+.status-note {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.base-location input,
+.filters input,
+.filters select {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+input,
+select,
+button,
+.primary-link {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font: inherit;
+  padding: 0.55rem 0.75rem;
+}
+
+button,
+.primary-link {
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button.secondary {
+  background: var(--accent-soft);
+  color: #0a5b47;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.layout {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.list-pane {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.hike-card .hike-main {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0;
+  min-height: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.hike-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(14, 122, 95, 0.15);
+}
+
+.detail {
+  align-content: start;
+}
+
+.map {
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.detail .actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.85));
+  padding-top: 0.4rem;
+}
+
+.error {
+  color: #8e2a25;
+  background: #ffe4e2;
+  border: 1px solid #f6b8b4;
+  border-radius: 10px;
+  padding: 0.65rem;
+}
+
+.empty-state {
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .base-location {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep iPhone landscape simple and avoid pseudo-tablet cramped panes. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map {
+    height: 180px;
+  }
+
+  .app-shell {
+    gap: 0.65rem;
+  }
+}

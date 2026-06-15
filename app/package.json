@@ -1,0 +1,38 @@
+{
+  "name": "holiday-hiking-mvp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:smoke": "vitest run src/lib/smokeFlow.test.ts",
+    "test:ok-flow": "vitest run src/components/BaseLocationBar.test.tsx",
+    "audit:report": "npm audit",
+    "audit:fix": "npm audit fix",
+    "qa:telemetry": "node scripts/telemetry-summary.mjs",
+    "verify:release": "npm run test:smoke && npm run build"
+  },
+  "dependencies": {
+    "idb": "^8.0.0",
+    "leaflet": "^1.9.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/leaflet": "^1.9.20",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.9"
+  }
+}

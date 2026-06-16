@@ -3,8 +3,10 @@ import {
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
+  getReleaseQaChecks,
   getSavedBaseLocation,
   pushRecentBaseLocation,
+  setReleaseQaChecks,
   setActiveTab,
   setSavedBaseLocation
 } from "./appStateStore";
@@ -19,10 +21,12 @@ describe("appStateStore", () => {
     expect(getSavedBaseLocation()).toEqual({ label: "Kapalua" });
   });
 
-  it("defaults to browse tab and restores shortlist tab", () => {
+  it("defaults to browse tab and restores shortlist/qa tabs", () => {
     expect(getActiveTab()).toBe("browse");
     setActiveTab("shortlist");
     expect(getActiveTab()).toBe("shortlist");
+    setActiveTab("qa");
+    expect(getActiveTab()).toBe("qa");
   });
 
   it("stores recent base locations with newest first and deduped", () => {
@@ -40,5 +44,10 @@ describe("appStateStore", () => {
     pushRecentBaseLocation("D", 3);
 
     expect(getRecentBaseLocations()).toEqual(["D", "C", "B"]);
+  });
+
+  it("persists release qa checklist values", () => {
+    setReleaseQaChecks({ core_flow: true, ipad_rotation: false });
+    expect(getReleaseQaChecks()).toEqual({ core_flow: true, ipad_rotation: false });
   });
 });

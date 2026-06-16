@@ -170,4 +170,22 @@ describe("App recovery states", () => {
       expect(mocks.listNearbyHikesMock).toHaveBeenCalledTimes(2);
     });
   });
+
+  it("shows release QA tab with checklist progress and controls", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockResolvedValue([]);
+
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /Release QA/ }));
+
+    expect(await screen.findByText("Release readiness")).toBeTruthy();
+    expect(screen.getByText("0 of 5 checks complete.")).toBeTruthy();
+
+    await user.click(screen.getByLabelText("iPhone core flow passes end-to-end"));
+    expect(screen.getByText("1 of 5 checks complete.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Mark all complete" }));
+    expect(screen.getByText("5 of 5 checks complete.")).toBeTruthy();
+  });
 });

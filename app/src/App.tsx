@@ -16,13 +16,16 @@ import {
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
+  getReleaseQaChecks,
   getSavedBaseLocation,
   pushRecentBaseLocation,
+  setReleaseQaChecks,
   setActiveTab,
   setSavedBaseLocation,
   type ActiveTab
 } from "./lib/appStateStore";
 import { clearShortlist, getShortlist, setShortlist } from "./lib/shortlistStore";
+import { getTelemetrySummary } from "./lib/telemetryReport";
 import type { BaseLocation, Hike, HikeFilters } from "./types";
 
 const defaultFilters: HikeFilters = {
@@ -39,6 +42,14 @@ const broadenedFilters: HikeFilters = {
   minRating: 3.5
 };
 
+const releaseQaChecklist = [
+  { id: "iphone_core_flow", label: "iPhone core flow passes end-to-end" },
+  { id: "maps_handoff_paths", label: "Google Maps handoff works installed and browser fallback" },
+  { id: "manual_location_denied", label: "Manual base location works after denied location" },
+  { id: "ipad_rotation_split", label: "iPad rotation and split-view keep state intact" },
+  { id: "error_recovery_paths", label: "All empty/error states have recovery actions" }
+] as const;
+
 function App() {
   const [baseLocation, setBaseLocation] = useState<BaseLocation>(
     getSavedBaseLocation() ?? { label: "Current area" }
@@ -52,6 +63,9 @@ function App() {
   const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
   const [recentBaseLocations, setRecentBaseLocations] = useState<string[]>(() =>
     getRecentBaseLocations()
+  );
+  const [releaseQaChecks, setReleaseQaChecksState] = useState<Record<string, boolean>>(() =>
+    getReleaseQaChecks()
   );
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -72,6 +86,10 @@ function App() {
   useEffect(() => {
     setActiveTab(activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    setReleaseQaChecks(releaseQaChecks);
+  }, [releaseQaChecks]);
 
   useEffect(() => {
     if (coords) {
@@ -144,6 +162,9 @@ function App() {
     () => hikeResults.filter((hike) => shortlist.includes(hike.id)),
     [shortlist, hikeResults]
   );
+  const telemetrySummary = getTelemetrySummary();
+  const qaCompletedCount = releaseQaChecklist.filter((check) => releaseQaChecks[check.id]).length;
+  const qaAllComplete = qaCompletedCount === releaseQaChecklist.length;
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -188,6 +209,24 @@ function App() {
     trackEvent("filters_broadened", { base: baseLocation.label });
   };
 
+  const toggleReleaseQaCheck = (checkId: string) => {
+    setReleaseQaChecksState((current) => ({
+      ...current,
+      [checkId]: !current[checkId]
+    }));
+  };
+
+  const markAllReleaseQaChecks = () => {
+    const allChecked = Object.fromEntries(releaseQaChecklist.map((check) => [check.id, true]));
+    setReleaseQaChecksState(allChecked);
+    setStatusMessage("Release QA checklist marked complete.");
+  };
+
+  const resetReleaseQaChecks = () => {
+    setReleaseQaChecksState({});
+    setStatusMessage("Release QA checklist reset.");
+  };
+
   const clearAllLocalData = () => {
     const confirmed = window.confirm("Clear all local app data on this device?");
     if (!confirmed) {
@@ -204,6 +243,7 @@ function App() {
     setFilters(defaultFilters);
     setSelectedHikeId("");
     setRecentBaseLocations([]);
+    setReleaseQaChecksState({});
     setStatusMessage("Local data cleared.");
   };
 
@@ -237,6 +277,13 @@ function App() {
           onClick={() => setActiveTabState("shortlist")}
         >
           Shortlist ({shortlist.length})
+        </button>
+        <button
+          type="button"
+          className={activeTab === "qa" ? "tab-active" : "secondary"}
+          onClick={() => setActiveTabState("qa")}
+        >
+          Release QA ({qaCompletedCount}/{releaseQaChecklist.length})
         </button>
       </section>
 
@@ -286,9 +333,13 @@ function App() {
       <section className="layout">
         <section className="list-pane">
           <h2>
-            {activeTab === "browse" ? `Top nearby hikes for ${baseLocation.label}` : "Your shortlist"}
+            {activeTab === "browse"
+              ? `Top nearby hikes for ${baseLocation.label}`
+              : activeTab === "shortlist"
+                ? "Your shortlist"
+                : "Release QA checklist"}
           </h2>
-          {hikesLoading ? (
+          {activeTab === "browse" && hikesLoading ? (
             <div className="card empty-state">
               <p>Loading hikes for {baseLocation.label}...</p>
             </div>
@@ -348,36 +399,77 @@ function App() {
                 />
               ))
             )
-          ) : shortlistedHikes.length === 0 ? (
+          ) : activeTab === "shortlist" ? (
+            shortlistedHikes.length === 0 ? (
             <div className="card empty-state">
               <p>Your shortlist is empty.</p>
               <button type="button" className="secondary" onClick={() => setActiveTabState("browse")}>
                 Browse hikes
               </button>
             </div>
+            ) : (
+              shortlistedHikes.map((hike) => (
+                <HikeCard
+                  key={hike.id}
+                  hike={hike}
+                  selected={selectedHike?.id === hike.id}
+                  shortlisted={shortlist.includes(hike.id)}
+                  onSelect={() => setSelectedHikeId(hike.id)}
+                  onToggleShortlist={() => toggleShortlist(hike.id)}
+                />
+              ))
+            )
           ) : (
-            shortlistedHikes.map((hike) => (
-              <HikeCard
-                key={hike.id}
-                hike={hike}
-                selected={selectedHike?.id === hike.id}
-                shortlisted={shortlist.includes(hike.id)}
-                onSelect={() => setSelectedHikeId(hike.id)}
-                onToggleShortlist={() => toggleShortlist(hike.id)}
-              />
-            ))
+            <section className="card qa-checklist">
+              <p>
+                {qaCompletedCount} of {releaseQaChecklist.length} checks complete.
+              </p>
+              <div className="qa-list">
+                {releaseQaChecklist.map((check) => (
+                  <label key={check.id} className="qa-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(releaseQaChecks[check.id])}
+                      onChange={() => toggleReleaseQaCheck(check.id)}
+                    />
+                    <span>{check.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="empty-state-actions">
+                <button type="button" className="secondary" onClick={markAllReleaseQaChecks}>
+                  Mark all complete
+                </button>
+                <button type="button" className="secondary" onClick={resetReleaseQaChecks}>
+                  Reset checklist
+                </button>
+              </div>
+            </section>
           )}
         </section>
 
-        <HikeDetail
-          hike={selectedHike}
-          shortlisted={selectedHike ? shortlist.includes(selectedHike.id) : false}
-          onToggleShortlist={() => {
-            if (selectedHike) {
-              toggleShortlist(selectedHike.id);
-            }
-          }}
-        />
+        {activeTab === "qa" ? (
+          <section className="card qa-summary">
+            <h2>Release readiness</h2>
+            <p>
+              Status: {qaAllComplete ? "Ready for release checks" : "Checklist still in progress"}
+            </p>
+            <p>Total telemetry events: {telemetrySummary.totalEvents}</p>
+            <p>Maps handoff events: {telemetrySummary.mapsHandoffCount}</p>
+            <p>Provider fallback events: {telemetrySummary.fallbackUsedCount}</p>
+            <p>Fallback rate: {telemetrySummary.fallbackRatePercent}%</p>
+          </section>
+        ) : (
+          <HikeDetail
+            hike={selectedHike}
+            shortlisted={selectedHike ? shortlist.includes(selectedHike.id) : false}
+            onToggleShortlist={() => {
+              if (selectedHike) {
+                toggleShortlist(selectedHike.id);
+              }
+            }}
+          />
+        )}
       </section>
     </main>
   );

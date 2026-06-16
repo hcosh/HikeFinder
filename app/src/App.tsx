@@ -28,7 +28,7 @@ import {
   type ActiveTab
 } from "./lib/appStateStore";
 import { clearShortlist, getShortlist, setShortlist } from "./lib/shortlistStore";
-import { getTelemetrySummary } from "./lib/telemetryReport";
+import { formatTelemetrySummary, getTelemetrySummary } from "./lib/telemetryReport";
 import type { BaseLocation, Hike, HikeFilters } from "./types";
 
 const defaultFilters: HikeFilters = {
@@ -240,6 +240,33 @@ function App() {
     setReleaseQaSignoff(signedAt);
     setReleaseQaSignoffState(signedAt);
     setStatusMessage("Release QA sign-off captured.");
+  };
+
+  const copyQaSummary = async () => {
+    const checklistLines = releaseQaChecklist.map((check) => {
+      const complete = releaseQaChecks[check.id] ? "[x]" : "[ ]";
+      return `${complete} ${check.label}`;
+    });
+
+    const summaryText = [
+      "Release QA Checklist",
+      ...checklistLines,
+      "",
+      formatTelemetrySummary(telemetrySummary),
+      `Sign-off: ${releaseQaSignoff ?? "Not signed"}`
+    ].join("\n");
+
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      setStatusMessage("Clipboard is unavailable on this device.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setStatusMessage("QA summary copied to clipboard.");
+    } catch {
+      setStatusMessage("Unable to copy QA summary.");
+    }
   };
 
   const clearAllLocalData = () => {
@@ -485,6 +512,9 @@ function App() {
             <p>
               Last sign-off: {releaseQaSignoff ? new Date(releaseQaSignoff).toLocaleString() : "Not signed"}
             </p>
+            <button type="button" className="secondary" onClick={copyQaSummary}>
+              Copy QA summary
+            </button>
           </section>
         ) : (
           <HikeDetail

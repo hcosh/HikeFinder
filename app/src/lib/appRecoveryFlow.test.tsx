@@ -190,5 +190,10 @@ describe("App recovery states", () => {
 
     await user.click(screen.getByRole("button", { name: "Mark release ready" }));
     expect(screen.queryByText("Last sign-off: Not signed")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Copy QA summary" }));
+    const copiedMessage = screen.queryByText("QA summary copied to clipboard.");
+    const unavailableMessage = screen.queryByText("Clipboard is unavailable on this device.");
+    expect(Boolean(copiedMessage || unavailableMessage)).toBe(true);
   });
 });

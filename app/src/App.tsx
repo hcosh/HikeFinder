@@ -14,18 +14,22 @@ import {
 import { filterAndSortHikes } from "./lib/filterHikes";
 import {
   clearReleaseQaSignoff,
+  clearReleaseQaRuns,
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
   getReleaseQaChecks,
+  getReleaseQaRuns,
   getReleaseQaSignoff,
   getSavedBaseLocation,
   pushRecentBaseLocation,
   setReleaseQaChecks,
+  setReleaseQaRuns,
   setReleaseQaSignoff,
   setActiveTab,
   setSavedBaseLocation,
-  type ActiveTab
+  type ActiveTab,
+  type ReleaseQaRun
 } from "./lib/appStateStore";
 import { clearShortlist, getShortlist, setShortlist } from "./lib/shortlistStore";
 import { formatTelemetrySummary, getTelemetrySummary } from "./lib/telemetryReport";
@@ -53,6 +57,16 @@ const releaseQaChecklist = [
   { id: "error_recovery_paths", label: "All empty/error states have recovery actions" }
 ] as const;
 
+const qaDevices = ["iPhone Safari", "iPad Safari", "iPad Split View", "Desktop Safari"] as const;
+const qaScenarios = [
+  "Core flow",
+  "Location denied",
+  "Weak network",
+  "Portrait and landscape",
+  "Split view",
+  "Maps handoff"
+] as const;
+
 function App() {
   const [baseLocation, setBaseLocation] = useState<BaseLocation>(
     getSavedBaseLocation() ?? { label: "Current area" }
@@ -73,6 +87,11 @@ function App() {
   const [releaseQaSignoff, setReleaseQaSignoffState] = useState<string | null>(() =>
     getReleaseQaSignoff()
   );
+  const [releaseQaRuns, setReleaseQaRunsState] = useState<ReleaseQaRun[]>(() => getReleaseQaRuns());
+  const [qaRunDevice, setQaRunDevice] = useState<string>(qaDevices[0]);
+  const [qaRunScenario, setQaRunScenario] = useState<string>(qaScenarios[0]);
+  const [qaRunOutcome, setQaRunOutcome] = useState<"pass" | "fail" | "blocked">("pass");
+  const [qaRunNotes, setQaRunNotes] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const { coords, error, loading, requestLocation } = useGeolocation();
@@ -96,6 +115,10 @@ function App() {
   useEffect(() => {
     setReleaseQaChecks(releaseQaChecks);
   }, [releaseQaChecks]);
+
+  useEffect(() => {
+    setReleaseQaRuns(releaseQaRuns);
+  }, [releaseQaRuns]);
 
   useEffect(() => {
     if (coords) {
@@ -171,6 +194,7 @@ function App() {
   const telemetrySummary = getTelemetrySummary();
   const qaCompletedCount = releaseQaChecklist.filter((check) => releaseQaChecks[check.id]).length;
   const qaAllComplete = qaCompletedCount === releaseQaChecklist.length;
+  const qaFailures = releaseQaRuns.filter((run) => run.outcome === "fail").length;
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -231,7 +255,9 @@ function App() {
   const resetReleaseQaChecks = () => {
     setReleaseQaChecksState({});
     clearReleaseQaSignoff();
+    clearReleaseQaRuns();
     setReleaseQaSignoffState(null);
+    setReleaseQaRunsState([]);
     setStatusMessage("Release QA checklist reset.");
   };
 
@@ -240,6 +266,47 @@ function App() {
     setReleaseQaSignoff(signedAt);
     setReleaseQaSignoffState(signedAt);
     setStatusMessage("Release QA sign-off captured.");
+  };
+
+  const addReleaseQaRun = () => {
+    const nextRun: ReleaseQaRun = {
+      id: `qa-${Date.now()}`,
+      device: qaRunDevice,
+      scenario: qaRunScenario,
+      outcome: qaRunOutcome,
+      notes: qaRunNotes.trim(),
+      timestampIso: new Date().toISOString()
+    };
+
+    setReleaseQaRunsState((current) => [nextRun, ...current].slice(0, 30));
+    setQaRunNotes("");
+    setStatusMessage("Release QA run logged.");
+  };
+
+  const exportReleaseQaRuns = () => {
+    if (releaseQaRuns.length === 0) {
+      setStatusMessage("No QA runs to export yet.");
+      return;
+    }
+
+    try {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        runs: releaseQaRuns
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "release-qa-runs.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setStatusMessage("QA run log exported.");
+    } catch {
+      setStatusMessage("Unable to export QA run log.");
+    }
   };
 
   const copyQaSummary = async () => {
@@ -253,7 +320,13 @@ function App() {
       ...checklistLines,
       "",
       formatTelemetrySummary(telemetrySummary),
-      `Sign-off: ${releaseQaSignoff ?? "Not signed"}`
+      `Sign-off: ${releaseQaSignoff ?? "Not signed"}`,
+      "",
+      "Recent QA runs:",
+      ...releaseQaRuns.map((run) => {
+        const notes = run.notes ? ` | Notes: ${run.notes}` : "";
+        return `- ${run.timestampIso} | ${run.device} | ${run.scenario} | ${run.outcome}${notes}`;
+      })
     ].join("\n");
 
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
@@ -287,6 +360,7 @@ function App() {
     setRecentBaseLocations([]);
     setReleaseQaChecksState({});
     setReleaseQaSignoffState(null);
+    setReleaseQaRunsState([]);
     setStatusMessage("Local data cleared.");
   };
 
@@ -467,6 +541,9 @@ function App() {
               <p>
                 {qaCompletedCount} of {releaseQaChecklist.length} checks complete.
               </p>
+              <p>
+                Logged QA runs: {releaseQaRuns.length} ({qaFailures} failures)
+              </p>
               <div className="qa-list">
                 {releaseQaChecklist.map((check) => (
                   <label key={check.id} className="qa-item">
@@ -495,6 +572,66 @@ function App() {
                   Reset checklist
                 </button>
               </div>
+
+              <section className="qa-run-form">
+                <h3>Log QA run</h3>
+                <div className="filter-row">
+                  <label>
+                    Device
+                    <select value={qaRunDevice} onChange={(event) => setQaRunDevice(event.target.value)}>
+                      {qaDevices.map((device) => (
+                        <option key={device} value={device}>
+                          {device}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Scenario
+                    <select value={qaRunScenario} onChange={(event) => setQaRunScenario(event.target.value)}>
+                      {qaScenarios.map((scenario) => (
+                        <option key={scenario} value={scenario}>
+                          {scenario}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Outcome
+                  <select
+                    value={qaRunOutcome}
+                    onChange={(event) => setQaRunOutcome(event.target.value as "pass" | "fail" | "blocked")}
+                  >
+                    <option value="pass">Pass</option>
+                    <option value="fail">Fail</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </label>
+                <label>
+                  Notes
+                  <textarea
+                    value={qaRunNotes}
+                    onChange={(event) => setQaRunNotes(event.target.value)}
+                    placeholder="What happened during this run?"
+                    rows={3}
+                  />
+                </label>
+                <button type="button" className="secondary" onClick={addReleaseQaRun}>
+                  Add QA run
+                </button>
+              </section>
+
+              {releaseQaRuns.length > 0 && (
+                <ul className="qa-run-list">
+                  {releaseQaRuns.slice(0, 5).map((run) => (
+                    <li key={run.id}>
+                      <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
+                      {run.notes ? ` · ${run.notes}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           )}
         </section>
@@ -514,6 +651,9 @@ function App() {
             </p>
             <button type="button" className="secondary" onClick={copyQaSummary}>
               Copy QA summary
+            </button>
+            <button type="button" className="secondary" onClick={exportReleaseQaRuns}>
+              Export QA runs JSON
             </button>
           </section>
         ) : (

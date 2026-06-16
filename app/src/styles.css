@@ -96,8 +96,16 @@ p {
   margin-top: 0.35rem;
 }
 
+.qa-checklist input,
+.qa-checklist select,
+.qa-checklist textarea {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
 input,
 select,
+textarea,
 button,
 .primary-link {
   min-height: 44px;
@@ -249,6 +257,24 @@ button.secondary {
   width: 1.15rem;
   height: 1.15rem;
   margin-top: 0.15rem;
+}
+
+.qa-run-form {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+  border-top: 1px dashed var(--border);
+}
+
+.qa-run-form h3 {
+  margin: 0;
+}
+
+.qa-run-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
 }
 
 @media (min-width: 900px) {

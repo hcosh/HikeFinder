@@ -5,9 +5,18 @@ const ACTIVE_TAB_KEY = "holiday-hiking-active-tab";
 const RECENT_BASE_LOCATIONS_KEY = "holiday-hiking-recent-base-locations";
 const RELEASE_QA_CHECKS_KEY = "holiday-hiking-release-qa-checks";
 const RELEASE_QA_SIGNOFF_KEY = "holiday-hiking-release-qa-signoff";
+const RELEASE_QA_RUNS_KEY = "holiday-hiking-release-qa-runs";
 
 export type ActiveTab = "browse" | "shortlist" | "qa";
 export type ReleaseQaChecks = Record<string, boolean>;
+export type ReleaseQaRun = {
+  id: string;
+  device: string;
+  scenario: string;
+  outcome: "pass" | "fail" | "blocked";
+  notes: string;
+  timestampIso: string;
+};
 
 export function getSavedBaseLocation(): BaseLocation | null {
   try {
@@ -120,10 +129,47 @@ export function clearReleaseQaSignoff(): void {
   localStorage.removeItem(RELEASE_QA_SIGNOFF_KEY);
 }
 
+export function getReleaseQaRuns(): ReleaseQaRun[] {
+  try {
+    const raw = localStorage.getItem(RELEASE_QA_RUNS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (value): value is ReleaseQaRun =>
+        value &&
+        typeof value === "object" &&
+        typeof value.id === "string" &&
+        typeof value.device === "string" &&
+        typeof value.scenario === "string" &&
+        (value.outcome === "pass" || value.outcome === "fail" || value.outcome === "blocked") &&
+        typeof value.notes === "string" &&
+        typeof value.timestampIso === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function setReleaseQaRuns(next: ReleaseQaRun[]): void {
+  localStorage.setItem(RELEASE_QA_RUNS_KEY, JSON.stringify(next));
+}
+
+export function clearReleaseQaRuns(): void {
+  localStorage.removeItem(RELEASE_QA_RUNS_KEY);
+}
+
 export function clearAppState(): void {
   localStorage.removeItem(BASE_LOCATION_KEY);
   localStorage.removeItem(ACTIVE_TAB_KEY);
   localStorage.removeItem(RECENT_BASE_LOCATIONS_KEY);
   localStorage.removeItem(RELEASE_QA_CHECKS_KEY);
   localStorage.removeItem(RELEASE_QA_SIGNOFF_KEY);
+  localStorage.removeItem(RELEASE_QA_RUNS_KEY);
 }

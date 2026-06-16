@@ -1,14 +1,17 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   clearReleaseQaSignoff,
+  clearReleaseQaRuns,
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
   getReleaseQaChecks,
+  getReleaseQaRuns,
   getReleaseQaSignoff,
   getSavedBaseLocation,
   pushRecentBaseLocation,
   setReleaseQaChecks,
+  setReleaseQaRuns,
   setReleaseQaSignoff,
   setActiveTab,
   setSavedBaseLocation
@@ -60,5 +63,32 @@ describe("appStateStore", () => {
     expect(getReleaseQaSignoff()).toBe("2026-06-16T00:00:00.000Z");
     clearReleaseQaSignoff();
     expect(getReleaseQaSignoff()).toBeNull();
+  });
+
+  it("persists and clears release qa run logs", () => {
+    setReleaseQaRuns([
+      {
+        id: "run-1",
+        device: "iPhone Safari",
+        scenario: "Location denied",
+        outcome: "pass",
+        notes: "Manual entry worked",
+        timestampIso: "2026-06-16T00:00:00.000Z"
+      }
+    ]);
+
+    expect(getReleaseQaRuns()).toEqual([
+      {
+        id: "run-1",
+        device: "iPhone Safari",
+        scenario: "Location denied",
+        outcome: "pass",
+        notes: "Manual entry worked",
+        timestampIso: "2026-06-16T00:00:00.000Z"
+      }
+    ]);
+
+    clearReleaseQaRuns();
+    expect(getReleaseQaRuns()).toEqual([]);
   });
 });

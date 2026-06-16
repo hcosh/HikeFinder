@@ -4,6 +4,7 @@ const BASE_LOCATION_KEY = "holiday-hiking-base-location";
 const ACTIVE_TAB_KEY = "holiday-hiking-active-tab";
 const RECENT_BASE_LOCATIONS_KEY = "holiday-hiking-recent-base-locations";
 const RELEASE_QA_CHECKS_KEY = "holiday-hiking-release-qa-checks";
+const RELEASE_QA_SIGNOFF_KEY = "holiday-hiking-release-qa-signoff";
 
 export type ActiveTab = "browse" | "shortlist" | "qa";
 export type ReleaseQaChecks = Record<string, boolean>;
@@ -99,9 +100,30 @@ export function setReleaseQaChecks(next: ReleaseQaChecks): void {
   localStorage.setItem(RELEASE_QA_CHECKS_KEY, JSON.stringify(next));
 }
 
+export function getReleaseQaSignoff(): string | null {
+  try {
+    const raw = localStorage.getItem(RELEASE_QA_SIGNOFF_KEY);
+    if (!raw || typeof raw !== "string") {
+      return null;
+    }
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+export function setReleaseQaSignoff(timestampIso: string): void {
+  localStorage.setItem(RELEASE_QA_SIGNOFF_KEY, timestampIso);
+}
+
+export function clearReleaseQaSignoff(): void {
+  localStorage.removeItem(RELEASE_QA_SIGNOFF_KEY);
+}
+
 export function clearAppState(): void {
   localStorage.removeItem(BASE_LOCATION_KEY);
   localStorage.removeItem(ACTIVE_TAB_KEY);
   localStorage.removeItem(RECENT_BASE_LOCATIONS_KEY);
   localStorage.removeItem(RELEASE_QA_CHECKS_KEY);
+  localStorage.removeItem(RELEASE_QA_SIGNOFF_KEY);
 }

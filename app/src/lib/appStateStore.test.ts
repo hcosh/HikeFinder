@@ -1,12 +1,15 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
+  clearReleaseQaSignoff,
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
   getReleaseQaChecks,
+  getReleaseQaSignoff,
   getSavedBaseLocation,
   pushRecentBaseLocation,
   setReleaseQaChecks,
+  setReleaseQaSignoff,
   setActiveTab,
   setSavedBaseLocation
 } from "./appStateStore";
@@ -49,5 +52,13 @@ describe("appStateStore", () => {
   it("persists release qa checklist values", () => {
     setReleaseQaChecks({ core_flow: true, ipad_rotation: false });
     expect(getReleaseQaChecks()).toEqual({ core_flow: true, ipad_rotation: false });
+  });
+
+  it("persists and clears release qa sign-off timestamp", () => {
+    expect(getReleaseQaSignoff()).toBeNull();
+    setReleaseQaSignoff("2026-06-16T00:00:00.000Z");
+    expect(getReleaseQaSignoff()).toBe("2026-06-16T00:00:00.000Z");
+    clearReleaseQaSignoff();
+    expect(getReleaseQaSignoff()).toBeNull();
   });
 });

@@ -13,13 +13,16 @@ import {
 } from "./lib/telemetry";
 import { filterAndSortHikes } from "./lib/filterHikes";
 import {
+  clearReleaseQaSignoff,
   clearAppState,
   getActiveTab,
   getRecentBaseLocations,
   getReleaseQaChecks,
+  getReleaseQaSignoff,
   getSavedBaseLocation,
   pushRecentBaseLocation,
   setReleaseQaChecks,
+  setReleaseQaSignoff,
   setActiveTab,
   setSavedBaseLocation,
   type ActiveTab
@@ -66,6 +69,9 @@ function App() {
   );
   const [releaseQaChecks, setReleaseQaChecksState] = useState<Record<string, boolean>>(() =>
     getReleaseQaChecks()
+  );
+  const [releaseQaSignoff, setReleaseQaSignoffState] = useState<string | null>(() =>
+    getReleaseQaSignoff()
   );
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -224,7 +230,16 @@ function App() {
 
   const resetReleaseQaChecks = () => {
     setReleaseQaChecksState({});
+    clearReleaseQaSignoff();
+    setReleaseQaSignoffState(null);
     setStatusMessage("Release QA checklist reset.");
+  };
+
+  const markReleaseReady = () => {
+    const signedAt = new Date().toISOString();
+    setReleaseQaSignoff(signedAt);
+    setReleaseQaSignoffState(signedAt);
+    setStatusMessage("Release QA sign-off captured.");
   };
 
   const clearAllLocalData = () => {
@@ -244,6 +259,7 @@ function App() {
     setSelectedHikeId("");
     setRecentBaseLocations([]);
     setReleaseQaChecksState({});
+    setReleaseQaSignoffState(null);
     setStatusMessage("Local data cleared.");
   };
 
@@ -440,6 +456,14 @@ function App() {
                 <button type="button" className="secondary" onClick={markAllReleaseQaChecks}>
                   Mark all complete
                 </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={markReleaseReady}
+                  disabled={!qaAllComplete}
+                >
+                  Mark release ready
+                </button>
                 <button type="button" className="secondary" onClick={resetReleaseQaChecks}>
                   Reset checklist
                 </button>
@@ -458,6 +482,9 @@ function App() {
             <p>Maps handoff events: {telemetrySummary.mapsHandoffCount}</p>
             <p>Provider fallback events: {telemetrySummary.fallbackUsedCount}</p>
             <p>Fallback rate: {telemetrySummary.fallbackRatePercent}%</p>
+            <p>
+              Last sign-off: {releaseQaSignoff ? new Date(releaseQaSignoff).toLocaleString() : "Not signed"}
+            </p>
           </section>
         ) : (
           <HikeDetail

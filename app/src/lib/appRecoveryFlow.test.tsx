@@ -187,5 +187,8 @@ describe("App recovery states", () => {
 
     await user.click(screen.getByRole("button", { name: "Mark all complete" }));
     expect(screen.getByText("5 of 5 checks complete.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Mark release ready" }));
+    expect(screen.queryByText("Last sign-off: Not signed")).toBeNull();
   });
 });

@@ -202,8 +202,29 @@ button.secondary {
   padding: 0.65rem;
 }
 
+.error-stack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.error-stack p {
+  margin: 0;
+}
+
 .empty-state {
   color: var(--muted);
+}
+
+.empty-state-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.empty-state-actions {
+  display: grid;
+  gap: 0.5rem;
 }
 
 @media (min-width: 900px) {

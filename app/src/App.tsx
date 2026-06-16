@@ -32,6 +32,13 @@ const defaultFilters: HikeFilters = {
   minRating: 4
 };
 
+const broadenedFilters: HikeFilters = {
+  maxHours: 12,
+  maxDistanceKm: 30,
+  difficulty: "all",
+  minRating: 3.5
+};
+
 function App() {
   const [baseLocation, setBaseLocation] = useState<BaseLocation>(
     getSavedBaseLocation() ?? { label: "Current area" }
@@ -47,6 +54,7 @@ function App() {
     getRecentBaseLocations()
   );
   const [statusMessage, setStatusMessage] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const { coords, error, loading, requestLocation } = useGeolocation();
 
   useEffect(() => {
@@ -111,7 +119,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [baseLocation.label]);
+  }, [baseLocation.label, loadAttempt]);
 
   const filteredHikes = useMemo(() => {
     return filterAndSortHikes(hikeResults, filters);
@@ -119,6 +127,12 @@ function App() {
 
   const selectedHike: Hike | null =
     filteredHikes.find((h) => h.id === selectedHikeId) ?? filteredHikes[0] ?? null;
+
+  const searchAlreadyBroad =
+    filters.difficulty === broadenedFilters.difficulty &&
+    filters.minRating <= broadenedFilters.minRating &&
+    filters.maxHours >= broadenedFilters.maxHours &&
+    filters.maxDistanceKm >= broadenedFilters.maxDistanceKm;
 
   useEffect(() => {
     if (!selectedHike && filteredHikes[0]) {
@@ -155,6 +169,23 @@ function App() {
     const success = downloadTelemetryEvents();
     trackEvent("telemetry_exported", { success, eventCount });
     setStatusMessage(success ? "Telemetry export downloaded." : "Unable to export telemetry.");
+  };
+
+  const retryHikeLoad = () => {
+    setLoadAttempt((current) => current + 1);
+    setStatusMessage(`Retrying hikes for ${baseLocation.label}...`);
+    trackEvent("hikes_reload_requested", { base: baseLocation.label });
+  };
+
+  const broadenSearch = () => {
+    setFilters((current) => ({
+      difficulty: "all",
+      minRating: Math.min(current.minRating, broadenedFilters.minRating),
+      maxHours: Math.max(current.maxHours, broadenedFilters.maxHours),
+      maxDistanceKm: Math.max(current.maxDistanceKm, broadenedFilters.maxDistanceKm)
+    }));
+    setStatusMessage("Broadened filters to surface more hike options.");
+    trackEvent("filters_broadened", { base: baseLocation.label });
   };
 
   const clearAllLocalData = () => {
@@ -218,8 +249,31 @@ function App() {
         locating={loading}
       />
 
-      {error && <p className="error">{error}</p>}
-      {hikesError && <p className="error">{hikesError}</p>}
+      {error && (
+        <div className="error error-stack">
+          <p>{error}</p>
+          <button type="button" className="secondary" onClick={requestLocation}>
+            Try current location again
+          </button>
+          {recentBaseLocations[0] && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => applyRecentBaseLocation(recentBaseLocations[0])}
+            >
+              Use recent location: {recentBaseLocations[0]}
+            </button>
+          )}
+        </div>
+      )}
+      {hikesError && (
+        <div className="error error-stack">
+          <p>{hikesError}</p>
+          <button type="button" className="secondary" onClick={retryHikeLoad}>
+            Retry loading hikes
+          </button>
+        </div>
+      )}
 
       {activeTab === "browse" && (
         <FiltersBar
@@ -242,9 +296,25 @@ function App() {
             filteredHikes.length === 0 ? (
               <div className="card empty-state">
                 <p>No hikes match these filters.</p>
-                <button type="button" className="secondary" onClick={() => setFilters(defaultFilters)}>
-                  Reset filters
-                </button>
+                <p>Try relaxing one of these constraints:</p>
+                <ul className="empty-state-list">
+                  <li>Lower minimum rating by 0.5</li>
+                  <li>Increase max hours to include full-day trails</li>
+                  <li>Switch difficulty to All</li>
+                </ul>
+                <div className="empty-state-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={broadenSearch}
+                    disabled={searchAlreadyBroad}
+                  >
+                    Broaden search
+                  </button>
+                  <button type="button" className="secondary" onClick={() => setFilters(defaultFilters)}>
+                    Reset filters
+                  </button>
+                </div>
               </div>
             ) : (
               filteredHikes.map((hike) => (

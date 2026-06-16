@@ -277,6 +277,11 @@ button.secondary {
   gap: 0.45rem;
 }
 
+.qa-run-controls {
+  display: grid;
+  gap: 0.5rem;
+}
+
 @media (min-width: 900px) {
   .layout {
     grid-template-columns: 1fr 1fr;

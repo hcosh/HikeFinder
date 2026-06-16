@@ -92,6 +92,7 @@ function App() {
   const [qaRunScenario, setQaRunScenario] = useState<string>(qaScenarios[0]);
   const [qaRunOutcome, setQaRunOutcome] = useState<"pass" | "fail" | "blocked">("pass");
   const [qaRunNotes, setQaRunNotes] = useState("");
+  const [qaRunFilter, setQaRunFilter] = useState<"all" | "pass" | "fail" | "blocked">("all");
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const { coords, error, loading, requestLocation } = useGeolocation();
@@ -198,6 +199,8 @@ function App() {
   const qaFailures = releaseQaRuns.filter((run) => run.outcome === "fail").length;
   const qaBlocked = releaseQaRuns.filter((run) => run.outcome === "blocked").length;
   const canMarkReleaseReady = qaAllComplete && releaseQaRuns.length > 0;
+  const visibleQaRuns =
+    qaRunFilter === "all" ? releaseQaRuns : releaseQaRuns.filter((run) => run.outcome === qaRunFilter);
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -309,6 +312,34 @@ function App() {
       setStatusMessage("QA run log exported.");
     } catch {
       setStatusMessage("Unable to export QA run log.");
+    }
+  };
+
+  const copyFailedQaRuns = async () => {
+    const failedRuns = releaseQaRuns.filter((run) => run.outcome === "fail");
+    if (failedRuns.length === 0) {
+      setStatusMessage("No failed QA runs to copy.");
+      return;
+    }
+
+    const failedSummary = [
+      "Failed QA runs",
+      ...failedRuns.map((run) => {
+        const notes = run.notes ? ` | Notes: ${run.notes}` : "";
+        return `- ${run.timestampIso} | ${run.device} | ${run.scenario}${notes}`;
+      })
+    ].join("\n");
+
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      setStatusMessage("Clipboard is unavailable on this device.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(failedSummary);
+      setStatusMessage("Failed QA runs copied to clipboard.");
+    } catch {
+      setStatusMessage("Unable to copy failed QA runs.");
     }
   };
 
@@ -626,14 +657,35 @@ function App() {
               </section>
 
               {releaseQaRuns.length > 0 && (
-                <ul className="qa-run-list">
-                  {releaseQaRuns.slice(0, 5).map((run) => (
-                    <li key={run.id}>
-                      <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
-                      {run.notes ? ` · ${run.notes}` : ""}
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <div className="qa-run-controls">
+                    <label>
+                      Run filter
+                      <select
+                        value={qaRunFilter}
+                        onChange={(event) =>
+                          setQaRunFilter(event.target.value as "all" | "pass" | "fail" | "blocked")
+                        }
+                      >
+                        <option value="all">All</option>
+                        <option value="pass">Pass</option>
+                        <option value="fail">Fail</option>
+                        <option value="blocked">Blocked</option>
+                      </select>
+                    </label>
+                    <button type="button" className="secondary" onClick={copyFailedQaRuns}>
+                      Copy failed runs
+                    </button>
+                  </div>
+                  <ul className="qa-run-list">
+                    {visibleQaRuns.slice(0, 8).map((run) => (
+                      <li key={run.id}>
+                        <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
+                        {run.notes ? ` · ${run.notes}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </section>
           )}

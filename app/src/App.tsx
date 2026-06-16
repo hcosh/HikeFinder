@@ -293,7 +293,27 @@ function App() {
               <p>Loading hikes for {baseLocation.label}...</p>
             </div>
           ) : activeTab === "browse" ? (
-            filteredHikes.length === 0 ? (
+            hikesError ? (
+              <div className="card empty-state">
+                <p>We could not load hikes right now.</p>
+                <button type="button" className="secondary" onClick={retryHikeLoad}>
+                  Retry loading hikes
+                </button>
+              </div>
+            ) : hikeResults.length === 0 ? (
+              <div className="card empty-state">
+                <p>No hikes are currently available for {baseLocation.label}.</p>
+                <p>Try another nearby town or use current location to search again.</p>
+                <div className="empty-state-actions">
+                  <button type="button" className="secondary" onClick={requestLocation}>
+                    Use current location
+                  </button>
+                  <button type="button" className="secondary" onClick={retryHikeLoad}>
+                    Retry loading hikes
+                  </button>
+                </div>
+              </div>
+            ) : filteredHikes.length === 0 ? (
               <div className="card empty-state">
                 <p>No hikes match these filters.</p>
                 <p>Try relaxing one of these constraints:</p>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
@@ -79,7 +79,8 @@ describe("App recovery states", () => {
 
     expect(await screen.findByText("Unable to load hikes right now. Try again.")).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Retry loading hikes" }));
+    const retryButtons = screen.getAllByRole("button", { name: "Retry loading hikes" });
+    await user.click(retryButtons[0]);
 
     await waitFor(() => {
       expect(mocks.listNearbyHikesMock).toHaveBeenCalledTimes(2);
@@ -135,5 +136,38 @@ describe("App recovery states", () => {
       expect(screen.queryByText("No hikes match these filters.")).toBeNull();
     });
     expect(await screen.findByRole("heading", { name: "Mock Ridge Trail", level: 3 })).toBeTruthy();
+  });
+
+  it("shows a location no-data state when provider returns zero hikes without an error", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockResolvedValue([]);
+
+    render(<App />);
+
+    expect(await screen.findByText("No hikes are currently available for Current area.")).toBeTruthy();
+
+    const noDataState = screen.getByText("No hikes are currently available for Current area.").closest("div");
+    if (!noDataState) {
+      throw new Error("Expected no-data state container");
+    }
+
+    await user.click(within(noDataState).getByRole("button", { name: "Use current location" }));
+    expect(mocks.requestLocationMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows retry controls in browse pane when hike loading fails", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockRejectedValue(new Error("network"));
+
+    render(<App />);
+
+    expect(await screen.findByText("We could not load hikes right now.")).toBeTruthy();
+
+    const retryButtons = screen.getAllByRole("button", { name: "Retry loading hikes" });
+    await user.click(retryButtons[0]);
+
+    await waitFor(() => {
+      expect(mocks.listNearbyHikesMock).toHaveBeenCalledTimes(2);
+    });
   });
 });

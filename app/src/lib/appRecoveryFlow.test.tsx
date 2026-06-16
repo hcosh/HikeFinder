@@ -193,6 +193,7 @@ describe("App recovery states", () => {
     await user.click(screen.getByRole("button", { name: "Add QA run" }));
     expect(screen.getByText("Logged QA runs: 1 (1 failures)")).toBeTruthy();
     expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
+    expect(screen.getByText("QA outcomes: 0 pass · 1 fail · 0 blocked")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Mark release ready" }));
     expect(screen.queryByText("Last sign-off: Not signed")).toBeNull();

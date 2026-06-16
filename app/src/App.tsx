@@ -194,7 +194,10 @@ function App() {
   const telemetrySummary = getTelemetrySummary();
   const qaCompletedCount = releaseQaChecklist.filter((check) => releaseQaChecks[check.id]).length;
   const qaAllComplete = qaCompletedCount === releaseQaChecklist.length;
+  const qaPasses = releaseQaRuns.filter((run) => run.outcome === "pass").length;
   const qaFailures = releaseQaRuns.filter((run) => run.outcome === "fail").length;
+  const qaBlocked = releaseQaRuns.filter((run) => run.outcome === "blocked").length;
+  const canMarkReleaseReady = qaAllComplete && releaseQaRuns.length > 0;
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -564,7 +567,7 @@ function App() {
                   type="button"
                   className="secondary"
                   onClick={markReleaseReady}
-                  disabled={!qaAllComplete}
+                  disabled={!canMarkReleaseReady}
                 >
                   Mark release ready
                 </button>
@@ -646,6 +649,9 @@ function App() {
             <p>Maps handoff events: {telemetrySummary.mapsHandoffCount}</p>
             <p>Provider fallback events: {telemetrySummary.fallbackUsedCount}</p>
             <p>Fallback rate: {telemetrySummary.fallbackRatePercent}%</p>
+            <p>
+              QA outcomes: {qaPasses} pass · {qaFailures} fail · {qaBlocked} blocked
+            </p>
             <p>
               Last sign-off: {releaseQaSignoff ? new Date(releaseQaSignoff).toLocaleString() : "Not signed"}
             </p>

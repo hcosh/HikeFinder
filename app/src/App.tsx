@@ -4,6 +4,7 @@ import FiltersBar from "./components/FiltersBar";
 import HikeCard from "./components/HikeCard";
 import HikeDetail from "./components/HikeDetail";
 import { defaultHikeProvider } from "./data/providers";
+import { getBaseCoordinatesForLocation } from "./data/locationHikeCatalog";
 import { useGeolocation } from "./hooks/useGeolocation";
 import {
   clearTelemetryEvents,
@@ -172,8 +173,9 @@ function App() {
   }, [baseLocation.label, loadAttempt]);
 
   const filteredHikes = useMemo(() => {
-    return filterAndSortHikes(hikeResults, filters);
-  }, [filters, hikeResults]);
+    const baseCoordinates = baseLocation.coordinates ?? getBaseCoordinatesForLocation(baseLocation.label);
+    return filterAndSortHikes(hikeResults, filters, baseCoordinates);
+  }, [baseLocation.coordinates, baseLocation.label, filters, hikeResults]);
 
   const selectedHike: Hike | null =
     filteredHikes.find((h) => h.id === selectedHikeId) ?? filteredHikes[0] ?? null;

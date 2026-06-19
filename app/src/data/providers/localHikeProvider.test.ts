@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { localHikeProvider } from "./localHikeProvider";
 
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const earthRadiusKm = 6371;
+  const deltaLat = toRadians(lat2 - lat1);
+  const deltaLng = toRadians(lng2 - lng1);
+  const latA = toRadians(lat1);
+  const latB = toRadians(lat2);
+
+  const haversine =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(latA) * Math.cos(latB) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
 describe("localHikeProvider", () => {
   it("returns Stavanger-area hikes for Stavanger base location", async () => {
     const hikes = await localHikeProvider.listNearbyHikes("Stavanger");
@@ -26,5 +44,16 @@ describe("localHikeProvider", () => {
       expect.arrayContaining(["Montserrat Sant Jeroni Trail", "Collserola Carretera de les Aigues"])
     );
     expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
+  });
+
+  it("returns Barcelona trails that are all within 30km of Barcelona center", async () => {
+    const hikes = await localHikeProvider.listNearbyHikes("Barcelona");
+
+    const overLimit = hikes.filter((hike) => {
+      const distance = distanceKm(41.3851, 2.1734, hike.trailhead.coordinates.lat, hike.trailhead.coordinates.lng);
+      return distance > 30;
+    });
+
+    expect(overLimit).toHaveLength(0);
   });
 });

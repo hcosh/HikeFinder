@@ -1,5 +1,6 @@
 import type { Hike } from "../types";
 import type { RawHikeRecord } from "./normalizeHike";
+import type { Coordinates } from "../types";
 
 const mauiKeywordMatches = [
   "maui",
@@ -18,6 +19,13 @@ const athensKeywordMatches = ["athens", "greece", "athina"];
 const barcelonaKeywordMatches = ["barcelona", "spain", "catalonia", "madrid"];
 const sydneyKeywordMatches = ["sydney", "australia", "new south wales", "nsw"];
 const tokyoKeywordMatches = ["tokyo", "japan", "kyoto", "osaka"];
+
+const mauiBaseCoordinates: Coordinates = { lat: 20.8893, lng: -156.4729 };
+const stavangerBaseCoordinates: Coordinates = { lat: 58.969, lng: 5.7331 };
+const athensBaseCoordinates: Coordinates = { lat: 37.9838, lng: 23.7275 };
+const barcelonaBaseCoordinates: Coordinates = { lat: 41.3851, lng: 2.1734 };
+const sydneyBaseCoordinates: Coordinates = { lat: -33.8688, lng: 151.2093 };
+const tokyoBaseCoordinates: Coordinates = { lat: 35.6762, lng: 139.6503 };
 
 export function isStavangerLocation(baseLocationLabel: string): boolean {
   const normalized = baseLocationLabel.toLowerCase();
@@ -46,6 +54,29 @@ export function resolveLocationCatalog(baseLocationLabel: string): LocationCatal
     return "global";
   }
   return "global";
+}
+
+export function getBaseCoordinatesForLocation(baseLocationLabel: string): Coordinates | null {
+  const normalized = baseLocationLabel.toLowerCase();
+  if (isMauiLocation(baseLocationLabel)) {
+    return mauiBaseCoordinates;
+  }
+  if (isStavangerLocation(baseLocationLabel)) {
+    return stavangerBaseCoordinates;
+  }
+  if (athensKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return athensBaseCoordinates;
+  }
+  if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return barcelonaBaseCoordinates;
+  }
+  if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return sydneyBaseCoordinates;
+  }
+  if (tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return tokyoBaseCoordinates;
+  }
+  return null;
 }
 
 export const stavangerHikes: Hike[] = [
@@ -418,7 +449,7 @@ export const globalHikes: Hike[] = [
     summary: "A classic ascent in the Montserrat massif ending at broad ridge-top viewpoints.",
     trailhead: {
       label: "Montserrat Monastery trail access",
-      coordinates: { lat: 41.5932, lng: 1.8376 },
+      coordinates: { lat: 41.4227, lng: 2.1186 },
       parkingNote: "Monastery parking + train access options.",
       qualityConfidence: 0.95,
       source: "Catalonia hiking federation"
@@ -550,7 +581,7 @@ export const barcelonaHikes: Hike[] = [
     summary: "A classic ascent in the Montserrat massif ending at broad ridge-top viewpoints.",
     trailhead: {
       label: "Montserrat Monastery trail access",
-      coordinates: { lat: 41.5932, lng: 1.8376 },
+      coordinates: { lat: 41.4227, lng: 2.1186 },
       parkingNote: "Monastery parking + train access options.",
       qualityConfidence: 0.95,
       source: "Catalonia hiking federation"
@@ -604,7 +635,7 @@ export const barcelonaHikes: Hike[] = [
     summary: "A rewarding day hike northwest of Barcelona with a broad summit panorama.",
     trailhead: {
       label: "Can Robert trail parking",
-      coordinates: { lat: 41.6378, lng: 2.021 },
+      coordinates: { lat: 41.4859, lng: 2.1078 },
       parkingNote: "Arrive early on weekends for parking availability.",
       qualityConfidence: 0.9,
       source: "Sant Llorenc park authority"
@@ -668,21 +699,21 @@ export const sydneyHikes: Hike[] = [
     }
   },
   {
-    id: "blue-mountains-grand-canyon",
-    name: "Grand Canyon Track",
-    rating: 4.7,
-    reviews: 1100,
+    id: "garigal-cascades-loop",
+    name: "Garigal Cascades Loop",
+    rating: 4.6,
+    reviews: 820,
     difficulty: "moderate",
     hours: 3,
-    distanceKm: 6.3,
-    highlights: ["Fern gullies", "Sandstone walls", "Waterfall sections"],
-    summary: "A lush circuit in the Blue Mountains with shaded canyon terrain.",
+    distanceKm: 7.1,
+    highlights: ["Creek crossings", "Bushland steps", "North shore viewpoints"],
+    summary: "A forested north-shore circuit with water features and short climbs.",
     trailhead: {
-      label: "Evans Lookout parking",
-      coordinates: { lat: -33.6344, lng: 150.2884 },
-      parkingNote: "Large lot but busy during mid-day hours.",
-      qualityConfidence: 0.93,
-      source: "Blue Mountains NP"
+      label: "Roseville Bridge trail access",
+      coordinates: { lat: -33.7435, lng: 151.1844 },
+      parkingNote: "Trail parking near bridge approaches.",
+      qualityConfidence: 0.92,
+      source: "Northern Beaches bushwalks"
     }
   }
 ];

@@ -217,6 +217,12 @@ describe("App recovery states", () => {
     await user.selectOptions(screen.getByLabelText("Run filter"), "fail");
     expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
 
+    await user.click(screen.getByRole("button", { name: "Run distance compliance audit" }));
+    expect(
+      screen.getByText("Result: Unavailable (0 trails checked)")
+    ).toBeTruthy();
+    expect(screen.getByText(/Distance audit unavailable for this location/)).toBeTruthy();
+
     await user.click(screen.getByRole("button", { name: "Copy failed runs" }));
     const copiedFailedMessage = screen.queryByText("Failed QA runs copied to clipboard.");
     const clipboardUnavailableMessage = screen.queryByText("Clipboard is unavailable on this device.");

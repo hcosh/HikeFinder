@@ -4,7 +4,7 @@ function toRadians(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-function getDistanceKm(a: Coordinates, b: Coordinates): number {
+export function getDistanceKm(a: Coordinates, b: Coordinates): number {
   const earthRadiusKm = 6371;
   const deltaLat = toRadians(b.lat - a.lat);
   const deltaLng = toRadians(b.lng - a.lng);

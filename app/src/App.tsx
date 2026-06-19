@@ -12,7 +12,7 @@ import {
   getTelemetryEvents,
   trackEvent
 } from "./lib/telemetry";
-import { filterAndSortHikes } from "./lib/filterHikes";
+import { filterAndSortHikes, getDistanceKm } from "./lib/filterHikes";
 import {
   clearReleaseQaSignoff,
   clearReleaseQaRuns,
@@ -68,6 +68,16 @@ const qaScenarios = [
   "Maps handoff"
 ] as const;
 
+interface DistanceAuditResult {
+  status: "pass" | "violation" | "unavailable";
+  checkedCount: number;
+  violationCount: number;
+  maxDistanceKm: number;
+  baseLabel: string;
+  ranAtIso: string;
+  violationSummaries: string[];
+}
+
 function App() {
   const [baseLocation, setBaseLocation] = useState<BaseLocation>(
     getSavedBaseLocation() ?? { label: "Current area" }
@@ -96,6 +106,7 @@ function App() {
   const [qaRunNotes, setQaRunNotes] = useState("");
   const [editingQaRunId, setEditingQaRunId] = useState<string | null>(null);
   const [qaRunFilter, setQaRunFilter] = useState<"all" | "pass" | "fail" | "blocked">("all");
+  const [distanceAuditResult, setDistanceAuditResult] = useState<DistanceAuditResult | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const { coords, error, loading, requestLocation } = useGeolocation();
@@ -172,10 +183,14 @@ function App() {
     };
   }, [baseLocation.label, loadAttempt]);
 
+  const resolvedBaseCoordinates = useMemo(
+    () => baseLocation.coordinates ?? getBaseCoordinatesForLocation(baseLocation.label),
+    [baseLocation.coordinates, baseLocation.label]
+  );
+
   const filteredHikes = useMemo(() => {
-    const baseCoordinates = baseLocation.coordinates ?? getBaseCoordinatesForLocation(baseLocation.label);
-    return filterAndSortHikes(hikeResults, filters, baseCoordinates);
-  }, [baseLocation.coordinates, baseLocation.label, filters, hikeResults]);
+    return filterAndSortHikes(hikeResults, filters, resolvedBaseCoordinates);
+  }, [filters, hikeResults, resolvedBaseCoordinates]);
 
   const selectedHike: Hike | null =
     filteredHikes.find((h) => h.id === selectedHikeId) ?? filteredHikes[0] ?? null;
@@ -213,6 +228,10 @@ function App() {
     qaFailures > 0
       ? `Release QA (${qaCompletedCount}/${releaseQaChecklist.length} · ${qaFailures} open)`
       : `Release QA (${qaCompletedCount}/${releaseQaChecklist.length})`;
+  const shownHikes = useMemo(
+    () => filteredHikes.slice(0, displayedTrailCount),
+    [displayedTrailCount, filteredHikes]
+  );
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -440,6 +459,61 @@ function App() {
     } catch {
       setStatusMessage("Unable to copy QA summary.");
     }
+  };
+
+  const runDistanceComplianceAudit = () => {
+    if (!resolvedBaseCoordinates) {
+      setDistanceAuditResult({
+        status: "unavailable",
+        checkedCount: shownHikes.length,
+        violationCount: 0,
+        maxDistanceKm: filters.maxDistanceKm,
+        baseLabel: baseLocation.label,
+        ranAtIso: new Date().toISOString(),
+        violationSummaries: []
+      });
+      trackEvent("distance_audit_unavailable", {
+        base: baseLocation.label,
+        checkedCount: shownHikes.length,
+        maxDistanceKm: filters.maxDistanceKm
+      });
+      setStatusMessage("Distance audit unavailable for this location. Set a mapped city or current coordinates.");
+      return;
+    }
+
+    const violationSummaries = shownHikes
+      .map((hike) => {
+        const distance = getDistanceKm(resolvedBaseCoordinates, hike.trailhead.coordinates);
+        return {
+          hikeName: hike.name,
+          distance
+        };
+      })
+      .filter((item) => item.distance > filters.maxDistanceKm)
+      .map((item) => `${item.hikeName} (${item.distance.toFixed(1)} km)`);
+
+    const nextResult: DistanceAuditResult = {
+      status: violationSummaries.length === 0 ? "pass" : "violation",
+      checkedCount: shownHikes.length,
+      violationCount: violationSummaries.length,
+      maxDistanceKm: filters.maxDistanceKm,
+      baseLabel: baseLocation.label,
+      ranAtIso: new Date().toISOString(),
+      violationSummaries
+    };
+
+    setDistanceAuditResult(nextResult);
+    trackEvent("distance_audit_run", {
+      base: baseLocation.label,
+      checkedCount: nextResult.checkedCount,
+      violationCount: nextResult.violationCount,
+      maxDistanceKm: filters.maxDistanceKm
+    });
+    setStatusMessage(
+      nextResult.violationCount === 0
+        ? `Distance audit passed for ${nextResult.checkedCount} shown trails.`
+        : `Distance audit found ${nextResult.violationCount} distance violations.`
+    );
   };
 
   const clearAllLocalData = () => {
@@ -820,6 +894,37 @@ function App() {
             <p>
               Last sign-off: {releaseQaSignoff ? new Date(releaseQaSignoff).toLocaleString() : "Not signed"}
             </p>
+            <section className="qa-distance-audit">
+              <h3>Distance compliance audit</h3>
+              <p>
+                Checks currently shown trails for {baseLocation.label} against max distance {filters.maxDistanceKm}
+                km.
+              </p>
+              <button type="button" className="secondary" onClick={runDistanceComplianceAudit}>
+                Run distance compliance audit
+              </button>
+              {distanceAuditResult && (
+                <>
+                  <p>
+                    Result: {distanceAuditResult.status === "pass"
+                      ? `Pass (${distanceAuditResult.checkedCount} checked, 0 violations)`
+                      : distanceAuditResult.status === "violation"
+                        ? `Fail (${distanceAuditResult.checkedCount} checked, ${distanceAuditResult.violationCount} violations)`
+                        : `Unavailable (${distanceAuditResult.checkedCount} trails checked)`}
+                  </p>
+                  <p>
+                    Base: {distanceAuditResult.baseLabel} · Max distance: {distanceAuditResult.maxDistanceKm} km
+                  </p>
+                  {distanceAuditResult.status === "violation" && distanceAuditResult.violationSummaries.length > 0 && (
+                    <ul className="qa-audit-list">
+                      {distanceAuditResult.violationSummaries.slice(0, 5).map((summary) => (
+                        <li key={summary}>{summary}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </section>
             <button type="button" className="secondary" onClick={copyQaSummary}>
               Copy QA summary
             </button>

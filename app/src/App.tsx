@@ -45,7 +45,7 @@ const defaultFilters: HikeFilters = {
 
 const broadenedFilters: HikeFilters = {
   maxHours: 12,
-  maxDistanceKm: 30,
+  maxDistanceKm: 120,
   difficulty: "all",
   minRating: 3.5
 };
@@ -273,7 +273,7 @@ function App() {
       maxHours: Math.max(current.maxHours, broadenedFilters.maxHours),
       maxDistanceKm: Math.max(current.maxDistanceKm, broadenedFilters.maxDistanceKm)
     }));
-    setStatusMessage("Broadened filters to surface more hike options.");
+    setStatusMessage("Broadened filters (including max distance) to surface more hike options.");
     trackEvent("filters_broadened", { base: baseLocation.label });
   };
 
@@ -701,8 +701,8 @@ function App() {
                 ) : (
                   <p>
                     We could not match that location yet. Try current location, coordinates like "37.7749,
-                    -122.4194", or a supported city such as Stavanger, Maui, Barcelona, Athens, Sydney,
-                    or Tokyo.
+                    -122.4194", or a supported city such as Stavanger, Bergen, Maui, Barcelona,
+                    Athens, Sydney, or Tokyo.
                   </p>
                 )}
                 <div className="empty-state-actions">

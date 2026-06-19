@@ -41,6 +41,15 @@ describe("MockApiHikeProvider", () => {
     expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
   });
 
+  it("returns Bergen hikes for Bergen base location", async () => {
+    const provider = new MockApiHikeProvider();
+    const hikes = await provider.listNearbyHikes("Bergen");
+
+    expect(hikes.map((hike) => hike.name)).toEqual(
+      expect.arrayContaining(["Ulriken Summit Loop", "Floyen to Vidden Ridge Approach"])
+    );
+  });
+
   it("returns no hikes for unsupported manual locations", async () => {
     const provider = new MockApiHikeProvider();
     await expect(provider.listNearbyHikes("Reykjavik")).rejects.toThrow("no valid records");

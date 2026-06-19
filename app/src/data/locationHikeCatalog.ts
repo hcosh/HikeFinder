@@ -18,6 +18,7 @@ export type LocationCatalog = "maui" | "stavanger" | "global";
 
 const athensKeywordMatches = ["athens", "greece", "athina"];
 const barcelonaKeywordMatches = ["barcelona", "spain", "catalonia", "madrid"];
+const bergenKeywordMatches = ["bergen", "norway", "vestland"];
 const sydneyKeywordMatches = ["sydney", "australia", "new south wales", "nsw"];
 const tokyoKeywordMatches = ["tokyo", "japan", "kyoto", "osaka"];
 
@@ -25,6 +26,7 @@ const mauiBaseCoordinates: Coordinates = { lat: 20.8893, lng: -156.4729 };
 const stavangerBaseCoordinates: Coordinates = { lat: 58.969, lng: 5.7331 };
 const athensBaseCoordinates: Coordinates = { lat: 37.9838, lng: 23.7275 };
 const barcelonaBaseCoordinates: Coordinates = { lat: 41.3851, lng: 2.1734 };
+const bergenBaseCoordinates: Coordinates = { lat: 60.3913, lng: 5.3221 };
 const sydneyBaseCoordinates: Coordinates = { lat: -33.8688, lng: 151.2093 };
 const tokyoBaseCoordinates: Coordinates = { lat: 35.6762, lng: 139.6503 };
 
@@ -55,6 +57,7 @@ export function isKnownCatalogLocation(baseLocationLabel: string): boolean {
     isStavangerLocation(baseLocationLabel) ||
     athensKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    bergenKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     sydneyKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     tokyoKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     Boolean(parseCoordinateLabel(baseLocationLabel))
@@ -82,6 +85,7 @@ export function resolveLocationCatalog(baseLocationLabel: string): LocationCatal
   if (
     athensKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    bergenKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     sydneyKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
     tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))
   ) {
@@ -108,6 +112,9 @@ export function getBaseCoordinatesForLocation(baseLocationLabel: string): Coordi
   }
   if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return barcelonaBaseCoordinates;
+  }
+  if (bergenKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return bergenBaseCoordinates;
   }
   if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return sydneyBaseCoordinates;
@@ -682,6 +689,81 @@ export const barcelonaHikes: Hike[] = [
   }
 ];
 
+export const bergenHikes: Hike[] = [
+  {
+    id: "floyen-vidden-approach",
+    name: "Floyen to Vidden Ridge Approach",
+    rating: 4.7,
+    reviews: 860,
+    difficulty: "moderate",
+    hours: 4.8,
+    distanceKm: 12.1,
+    highlights: ["High ridge views", "City-to-mountain transition", "Classic Bergen route"],
+    summary: "A signature Bergen mountain traverse segment with broad views over fjords and city hills.",
+    trailhead: {
+      label: "Floyen upper funicular station",
+      coordinates: { lat: 60.3976, lng: 5.3434 },
+      parkingNote: "Funicular access is easiest from city center.",
+      qualityConfidence: 0.95,
+      source: "Bergen hiking council"
+    }
+  },
+  {
+    id: "ulriken-summit-loop",
+    name: "Ulriken Summit Loop",
+    rating: 4.8,
+    reviews: 1120,
+    difficulty: "moderate",
+    hours: 3.6,
+    distanceKm: 8.4,
+    highlights: ["Steep stone sections", "Cable car access", "Panoramic summit"],
+    summary: "A high-value Bergen summit loop with short steep climbs and wide city and sea views.",
+    trailhead: {
+      label: "Ulriken cable car base",
+      coordinates: { lat: 60.3775, lng: 5.3815 },
+      parkingNote: "Dedicated parking near cable car station.",
+      qualityConfidence: 0.96,
+      source: "Bergen mountain trails"
+    }
+  },
+  {
+    id: "lyderhorn-coastal-view",
+    name: "Lyderhorn Coastal View Trail",
+    rating: 4.5,
+    reviews: 470,
+    difficulty: "easy",
+    hours: 2.7,
+    distanceKm: 6.2,
+    highlights: ["Coastal viewpoints", "Gentle forest ascent", "Short half-day option"],
+    summary: "A shorter Bergen west-side climb with rewarding coastal and island views.",
+    trailhead: {
+      label: "Gravdal trail access",
+      coordinates: { lat: 60.3679, lng: 5.2627 },
+      parkingNote: "Neighborhood parking near trail signage.",
+      qualityConfidence: 0.9,
+      source: "Vestland outdoor map"
+    }
+  },
+  {
+    id: "damsgardsfjellet-urban-loop",
+    name: "Damsgardsfjellet Urban Loop",
+    rating: 4.4,
+    reviews: 390,
+    difficulty: "easy",
+    hours: 2.1,
+    distanceKm: 5.3,
+    highlights: ["City overlook", "Mixed gravel paths", "Quick post-work route"],
+    summary: "An accessible urban-adjacent hill loop with quick elevation and city panoramas.",
+    trailhead: {
+      label: "Melkeplassen access point",
+      coordinates: { lat: 60.3659, lng: 5.2931 },
+      parkingNote: "Use tram or neighborhood parking where available.",
+      qualityConfidence: 0.88,
+      source: "Bergen municipality trail network"
+    }
+  }
+];
+
 export const sydneyHikes: Hike[] = [
   {
     id: "royal-national-coast-track",
@@ -858,6 +940,7 @@ function hikesToRawRecords(records: Hike[]): RawHikeRecord[] {
 export const globalRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(globalHikes);
 export const athensRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(athensHikes);
 export const barcelonaRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(barcelonaHikes);
+export const bergenRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(bergenHikes);
 export const sydneyRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(sydneyHikes);
 export const tokyoRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(tokyoHikes);
 
@@ -866,6 +949,7 @@ const allCatalogHikes: Hike[] = [
   ...stavangerHikes,
   ...athensHikes,
   ...barcelonaHikes,
+  ...bergenHikes,
   ...sydneyHikes,
   ...tokyoHikes,
   ...globalHikes
@@ -879,6 +963,9 @@ export function getGlobalCatalogHikesForLocation(baseLocationLabel: string): Hik
   }
   if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return barcelonaHikes;
+  }
+  if (bergenKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return bergenHikes;
   }
   if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return sydneyHikes;
@@ -899,6 +986,9 @@ export function getGlobalCatalogRawRecordsForLocation(baseLocationLabel: string)
   }
   if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return barcelonaRawHikeRecords;
+  }
+  if (bergenKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return bergenRawHikeRecords;
   }
   if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return sydneyRawHikeRecords;

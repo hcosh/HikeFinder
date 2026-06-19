@@ -15,6 +15,7 @@ type OverpassElement = {
   lat?: number;
   lon?: number;
   center?: { lat: number; lon: number };
+  geometry?: Array<{ lat: number; lon: number }>;
   tags?: Record<string, string>;
 };
 
@@ -65,6 +66,19 @@ function toHike(baseCoordinates: Coordinates, element: OverpassElement): Hike | 
   const distance = getDistanceKm(baseCoordinates, coordinates);
   const difficulty = estimateDifficulty(tags);
   const baseHours = Math.max(1.2, Math.min(7.5, distance / 3.1));
+  const geometry = element.geometry;
+  const routeGeometry =
+    geometry && geometry.length > 1
+      ? geometry
+          .filter((point, index) => {
+            // Keep route polylines performant by downsampling very dense geometries.
+            if (geometry.length <= 180) {
+              return true;
+            }
+            return index % 3 === 0 || index === geometry.length - 1;
+          })
+          .map((point) => ({ lat: point.lat, lng: point.lon }))
+      : undefined;
 
   return {
     id: `osm-${element.type}-${element.id}`,
@@ -79,6 +93,7 @@ function toHike(baseCoordinates: Coordinates, element: OverpassElement): Hike | 
     trailhead: {
       label: tags.name,
       coordinates,
+      routeGeometry,
       qualityConfidence: 0.74,
       source: "OpenStreetMap Overpass"
     }
@@ -168,7 +183,7 @@ async function fetchNearbyOpenStreetMapHikes(baseCoordinates: Coordinates): Prom
   way(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["highway"~"path|footway|track"]["name"];
   node(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["tourism"="information"]["information"="trailhead"]["name"];
 );
-out center tags;`;
+out tags center geom;`;
 
     const response = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",

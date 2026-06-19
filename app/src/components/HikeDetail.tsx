@@ -70,7 +70,10 @@ export default function HikeDetail({ hike, shortlisted, onToggleShortlist }: Pro
         Trailhead confidence: {(hike.trailhead.qualityConfidence * 100).toFixed(0)}% · Source: {hike.trailhead.source}
       </p>
 
-      <TrailheadMap coords={hike.trailhead.coordinates} />
+      <TrailheadMap coords={hike.trailhead.coordinates} routeGeometry={hike.trailhead.routeGeometry} />
+      {!hike.trailhead.routeGeometry?.length && (
+        <p className="status-note">Route geometry unavailable for this trail; showing trailhead area.</p>
+      )}
 
       <div className="actions">
         <button type="button" className="secondary" onClick={onToggleShortlist}>

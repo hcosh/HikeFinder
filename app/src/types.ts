@@ -19,6 +19,7 @@ export interface TransitOption {
 export interface Trailhead {
   label: string;
   coordinates: Coordinates;
+  routeGeometry?: Coordinates[];
   parkingNote?: string;
   transitOptions?: TransitOption[];
   qualityConfidence: number;

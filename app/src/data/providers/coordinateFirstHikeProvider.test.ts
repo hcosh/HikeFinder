@@ -41,6 +41,11 @@ describe("coordinateFirstHikeProvider", () => {
               id: 2,
               type: "way",
               center: { lat: 43.599, lon: -116.171 },
+              geometry: [
+                { lat: 43.5981, lon: -116.1732 },
+                { lat: 43.5999, lon: -116.1711 },
+                { lat: 43.6017, lon: -116.1696 }
+              ],
               tags: { name: "Table Rock Path", highway: "path", sac_scale: "hiking" }
             }
           ]
@@ -53,5 +58,7 @@ describe("coordinateFirstHikeProvider", () => {
       expect.arrayContaining(["Camel's Back Ridge Trail", "Table Rock Path"])
     );
     expect(hikes.every((hike) => hike.trailhead.source === "OpenStreetMap Overpass")).toBe(true);
+    const routePreviewHike = hikes.find((hike) => hike.name === "Table Rock Path");
+    expect(routePreviewHike?.trailhead.routeGeometry?.length).toBeGreaterThan(1);
   });
 });

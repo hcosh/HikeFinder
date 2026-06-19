@@ -4,11 +4,13 @@ import type { Coordinates } from "../types";
 
 interface Props {
   coords: Coordinates;
+  routeGeometry?: Coordinates[];
 }
 
-export default function TrailheadMap({ coords }: Props) {
+export default function TrailheadMap({ coords, routeGeometry }: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
+  const layerGroupRef = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -24,15 +26,46 @@ export default function TrailheadMap({ coords }: Props) {
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(leafletMap.current);
-    } else {
-      leafletMap.current.setView([coords.lat, coords.lng], 13);
+
+      layerGroupRef.current = L.layerGroup().addTo(leafletMap.current);
     }
 
-    const marker = L.marker([coords.lat, coords.lng]).addTo(leafletMap.current);
-    return () => {
-      marker.remove();
+    if (!leafletMap.current || !layerGroupRef.current) {
+      return;
     };
-  }, [coords.lat, coords.lng]);
+
+    const layerGroup = layerGroupRef.current;
+    layerGroup.clearLayers();
+
+    const hasRoute = Boolean(routeGeometry && routeGeometry.length > 1);
+    if (hasRoute && routeGeometry) {
+      const polyline = L.polyline(
+        routeGeometry.map((point) => [point.lat, point.lng] as [number, number]),
+        {
+          color: "#0e7a5f",
+          weight: 4,
+          opacity: 0.9
+        }
+      ).addTo(layerGroup);
+
+      L.circleMarker([coords.lat, coords.lng], {
+        radius: 6,
+        color: "#0e7a5f",
+        fillColor: "#daf4ea",
+        fillOpacity: 1,
+        weight: 2
+      }).addTo(layerGroup);
+
+      leafletMap.current.fitBounds(polyline.getBounds(), {
+        padding: [18, 18],
+        maxZoom: 14
+      });
+      return;
+    }
+
+    L.marker([coords.lat, coords.lng]).addTo(layerGroup);
+    leafletMap.current.setView([coords.lat, coords.lng], 13);
+  }, [coords.lat, coords.lng, routeGeometry]);
 
   return <div ref={mapRef} className="map" aria-label="Trailhead map preview" />;
 }

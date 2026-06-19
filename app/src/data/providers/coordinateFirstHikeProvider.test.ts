@@ -6,8 +6,11 @@ describe("coordinateFirstHikeProvider", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns nearby catalog hikes for known locations without geocoding", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+  it("falls back to nearby curated hikes when OSM query has no matches", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ elements: [] })
+    } as Response);
 
     const hikes = await coordinateFirstHikeProvider.listNearbyHikes("Bergen");
 
@@ -15,19 +18,40 @@ describe("coordinateFirstHikeProvider", () => {
     expect(hikes.map((hike) => hike.name)).toEqual(
       expect.arrayContaining(["Ulriken Summit Loop", "Floyen to Vidden Ridge Approach"])
     );
-    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("geocodes unknown locations and returns generated nearby suggestions", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      json: async () => [{ lat: "43.615", lon: "-116.2023" }]
-    } as Response);
+  it("geocodes unknown locations and returns OSM trail matches", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ lat: "43.615", lon: "-116.2023" }]
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          elements: [
+            {
+              id: 1,
+              type: "relation",
+              center: { lat: 43.632, lon: -116.188 },
+              tags: { name: "Camel's Back Ridge Trail", route: "hiking" }
+            },
+            {
+              id: 2,
+              type: "way",
+              center: { lat: 43.599, lon: -116.171 },
+              tags: { name: "Table Rock Path", highway: "path", sac_scale: "hiking" }
+            }
+          ]
+        })
+      } as Response);
 
     const hikes = await coordinateFirstHikeProvider.listNearbyHikes("Boise");
 
-    expect(hikes).toHaveLength(8);
-    expect(hikes[0]?.name).toContain("Boise");
-    expect(hikes.every((hike) => hike.trailhead.source.includes("generated"))).toBe(true);
+    expect(hikes.map((hike) => hike.name)).toEqual(
+      expect.arrayContaining(["Camel's Back Ridge Trail", "Table Rock Path"])
+    );
+    expect(hikes.every((hike) => hike.trailhead.source === "OpenStreetMap Overpass")).toBe(true);
   });
 });

@@ -7,34 +7,82 @@ import {
 } from "../locationHikeCatalog";
 
 const radiusExpansionKm = [20, 50, 120, 250];
-const syntheticTrailNames = [
-  "Ridge Loop",
-  "Summit Connector",
-  "Forest Traverse",
-  "Valley Outlook Path",
-  "Lakefront Ascent",
-  "Canyon Spur",
-  "Hilltop Circuit",
-  "Sunset Panorama Trail"
-] as const;
-const syntheticOffsetsKm = [
-  { latKm: 2, lngKm: 1.5 },
-  { latKm: -3, lngKm: 2.5 },
-  { latKm: 4.2, lngKm: -1.8 },
-  { latKm: -5.5, lngKm: -2.2 },
-  { latKm: 7.1, lngKm: 3.8 },
-  { latKm: -8.2, lngKm: 4.4 },
-  { latKm: 10.4, lngKm: -4.7 },
-  { latKm: -12.8, lngKm: -5.3 }
-] as const;
-const syntheticDifficulties: Difficulty[] = ["easy", "moderate", "easy", "moderate", "hard", "moderate", "hard", "easy"];
 const geocodeCache = new Map<string, Coordinates | null>();
 
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+type OverpassElement = {
+  id: number;
+  type: "node" | "way" | "relation";
+  lat?: number;
+  lon?: number;
+  center?: { lat: number; lon: number };
+  tags?: Record<string, string>;
+};
+
+function estimateDifficulty(tags: Record<string, string>): Difficulty {
+  if (tags.sac_scale === "demanding_mountain_hiking" || tags.sac_scale === "mountain_hiking") {
+    return "hard";
+  }
+  if (tags.sac_scale || tags.route === "hiking") {
+    return "moderate";
+  }
+  return "easy";
+}
+
+function getElementCoordinates(element: OverpassElement): Coordinates | null {
+  if (typeof element.lat === "number" && typeof element.lon === "number") {
+    return { lat: element.lat, lng: element.lon };
+  }
+  if (element.center) {
+    return { lat: element.center.lat, lng: element.center.lon };
+  }
+  return null;
+}
+
+function isUsefulTrailElement(element: OverpassElement): boolean {
+  const tags = element.tags;
+  if (!tags?.name) {
+    return false;
+  }
+
+  if (tags.route === "hiking" || tags.information === "trailhead") {
+    return true;
+  }
+
+  if (tags.highway && /path|footway|track/.test(tags.highway) && (tags.sac_scale || tags.trail_visibility)) {
+    return true;
+  }
+
+  return /trail|loop|track|ridge|summit|path|way/i.test(tags.name);
+}
+
+function toHike(baseCoordinates: Coordinates, element: OverpassElement): Hike | null {
+  const tags = element.tags;
+  const coordinates = getElementCoordinates(element);
+  if (!tags?.name || !coordinates) {
+    return null;
+  }
+
+  const distance = getDistanceKm(baseCoordinates, coordinates);
+  const difficulty = estimateDifficulty(tags);
+  const baseHours = Math.max(1.2, Math.min(7.5, distance / 3.1));
+
+  return {
+    id: `osm-${element.type}-${element.id}`,
+    name: tags.name,
+    rating: 4.2,
+    reviews: 0,
+    difficulty,
+    hours: Number(baseHours.toFixed(1)),
+    distanceKm: Number(distance.toFixed(1)),
+    highlights: ["OpenStreetMap trail data", "Nearby route", "Coordinate-first search"],
+    summary: `Trail data sourced from OpenStreetMap near the selected location (${distance.toFixed(1)} km away).`,
+    trailhead: {
+      label: tags.name,
+      coordinates,
+      qualityConfidence: 0.74,
+      source: "OpenStreetMap Overpass"
+    }
+  };
 }
 
 async function geocodeBaseLocation(baseLocationLabel: string): Promise<Coordinates | null> {
@@ -110,40 +158,49 @@ async function geocodeBaseLocation(baseLocationLabel: string): Promise<Coordinat
   }
 }
 
-function createSyntheticNearbyHikes(baseLocationLabel: string, center: Coordinates): Hike[] {
-  const label = baseLocationLabel.trim() || "Selected area";
-  const labelSlug = slugify(label) || "selected-area";
-  const cosLat = Math.max(0.2, Math.cos((center.lat * Math.PI) / 180));
+async function fetchNearbyOpenStreetMapHikes(baseCoordinates: Coordinates): Promise<Hike[]> {
+  for (const radiusKm of radiusExpansionKm) {
+    const radiusMeters = Math.round(radiusKm * 1000);
+    const query = `[out:json][timeout:20];
+(
+  relation(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["route"="hiking"]["name"];
+  relation(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["route"="foot"]["name"];
+  way(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["highway"~"path|footway|track"]["name"];
+  node(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["tourism"="information"]["information"="trailhead"]["name"];
+);
+out center tags;`;
 
-  return syntheticOffsetsKm.map((offset, index) => {
-    const latOffset = offset.latKm / 111;
-    const lngOffset = offset.lngKm / (111 * cosLat);
-    const trailhead = {
-      lat: center.lat + latOffset,
-      lng: center.lng + lngOffset
-    };
-    const estimatedDistance = Math.max(2.4, Math.round((Math.abs(offset.latKm) + Math.abs(offset.lngKm)) * 1.1));
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `data=${encodeURIComponent(query)}`
+    });
 
-    return {
-      id: `${labelSlug}-synthetic-${index + 1}`,
-      name: `${label} ${syntheticTrailNames[index]}`,
-      rating: Number((4.2 + (index % 4) * 0.15).toFixed(1)),
-      reviews: 180 + index * 55,
-      difficulty: syntheticDifficulties[index],
-      hours: Number((1.8 + index * 0.45).toFixed(1)),
-      distanceKm: estimatedDistance,
-      highlights: ["Nearby access", "Scenic viewpoints", "Coordinate-first fallback"],
-      summary:
-        "Generated nearby route suggestion when curated catalog coverage is limited for this location.",
-      trailhead: {
-        label: `${label} trail access ${index + 1}`,
-        coordinates: trailhead,
-        parkingNote: "Verify parking and access conditions before departure.",
-        qualityConfidence: 0.66,
-        source: "Coordinate-first generated fallback"
-      }
-    };
-  });
+    if (!response.ok) {
+      continue;
+    }
+
+    const payload = (await response.json()) as { elements?: OverpassElement[] };
+    const elements = payload.elements ?? [];
+    const hikes = elements
+      .filter(isUsefulTrailElement)
+      .map((element) => toHike(baseCoordinates, element))
+      .filter((hike): hike is Hike => Boolean(hike))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .filter((hike, index, array) => array.findIndex((item) => item.name === hike.name) === index)
+      .slice(0, 10);
+
+    if (hikes.length >= 5) {
+      return hikes;
+    }
+    if (hikes.length > 0) {
+      return hikes;
+    }
+  }
+
+  return [];
 }
 
 function selectNearbyCatalogHikes(baseCoordinates: Coordinates): Hike[] {
@@ -180,17 +237,17 @@ class CoordinateFirstHikeProvider implements HikeProvider {
       throw new Error("Unable to geocode base location");
     }
 
-    const catalogMatches = selectNearbyCatalogHikes(baseCoordinates);
-    const generated = createSyntheticNearbyHikes(baseLocationLabel, baseCoordinates);
+    const osmHikes = await fetchNearbyOpenStreetMapHikes(baseCoordinates);
+    if (osmHikes.length > 0) {
+      return osmHikes;
+    }
 
-    if (catalogMatches.length >= 8) {
+    const catalogMatches = selectNearbyCatalogHikes(baseCoordinates);
+    if (catalogMatches.length > 0) {
       return catalogMatches.slice(0, 8);
     }
-    if (catalogMatches.length > 0) {
-      return [...catalogMatches, ...generated].slice(0, 8);
-    }
 
-    return generated;
+    throw new Error("No nearby hikes found from OSM or curated catalog");
   }
 }
 

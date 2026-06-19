@@ -8,6 +8,7 @@ import {
 
 const radiusExpansionKm = [20, 50, 120, 250];
 const geocodeCache = new Map<string, Coordinates | null>();
+const overpassCache = new Map<string, Hike[]>();
 
 type OverpassElement = {
   id: number;
@@ -101,7 +102,18 @@ function toHike(baseCoordinates: Coordinates, element: OverpassElement): Hike | 
 }
 
 function routeGeometryScore(hike: Hike): number {
-  return hike.trailhead.routeGeometry && hike.trailhead.routeGeometry.length > 1 ? 1 : 0;
+  const points = hike.trailhead.routeGeometry?.length ?? 0;
+  if (points >= 12) {
+    return 2;
+  }
+  if (points > 1) {
+    return 1;
+  }
+  return 0;
+}
+
+function coordinatesCacheKey(coords: Coordinates): string {
+  return `${coords.lat.toFixed(3)},${coords.lng.toFixed(3)}`;
 }
 
 async function geocodeBaseLocation(baseLocationLabel: string): Promise<Coordinates | null> {
@@ -178,26 +190,37 @@ async function geocodeBaseLocation(baseLocationLabel: string): Promise<Coordinat
 }
 
 async function fetchNearbyOpenStreetMapHikes(baseCoordinates: Coordinates): Promise<Hike[]> {
+  const cacheKey = coordinatesCacheKey(baseCoordinates);
+  const cached = overpassCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   for (const radiusKm of radiusExpansionKm) {
     const radiusMeters = Math.round(radiusKm * 1000);
     const query = `[out:json][timeout:20];
 (
   relation(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["route"="hiking"]["name"];
   relation(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["route"="foot"]["name"];
-  way(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["highway"~"path|footway|track"]["name"];
+  way(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["highway"~"path|footway|track"]["name"]["sac_scale"];
+  way(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["highway"~"path|footway|track"]["name"]["trail_visibility"];
   node(around:${radiusMeters},${baseCoordinates.lat},${baseCoordinates.lng})["tourism"="information"]["information"="trailhead"]["name"];
 );
 out tags center geom;`;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4500);
     const response = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `data=${encodeURIComponent(query)}`
-    });
+      body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal
+    }).catch(() => null);
+    clearTimeout(timeout);
 
-    if (!response.ok) {
+    if (!response || !response.ok) {
       continue;
     }
 
@@ -227,16 +250,19 @@ out tags center geom;`;
 
     const hikes = [...dedupedByName.values()]
       .sort((a, b) => routeGeometryScore(b) - routeGeometryScore(a) || a.distanceKm - b.distanceKm)
-      .slice(0, 10);
+      .slice(0, 12);
 
     if (hikes.length >= 5) {
+      overpassCache.set(cacheKey, hikes);
       return hikes;
     }
     if (hikes.length > 0) {
+      overpassCache.set(cacheKey, hikes);
       return hikes;
     }
   }
 
+  overpassCache.set(cacheKey, []);
   return [];
 }
 

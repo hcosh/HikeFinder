@@ -62,42 +62,6 @@ const manyMockHikes: Hike[] = Array.from({ length: 6 }, (_, index) => ({
   }
 }));
 
-const barcelonaNearbyMockHikes: Hike[] = [
-  {
-    ...mockHikes[0],
-    id: "barcelona-1",
-    name: "Barcelona Ridge Walk",
-    rating: 4.7,
-    distanceKm: 6,
-    trailhead: {
-      ...mockHikes[0].trailhead,
-      coordinates: { lat: 41.402, lng: 2.112 }
-    }
-  },
-  {
-    ...mockHikes[0],
-    id: "barcelona-2",
-    name: "Montjuic Heights Loop",
-    rating: 4.6,
-    distanceKm: 8,
-    trailhead: {
-      ...mockHikes[0].trailhead,
-      coordinates: { lat: 41.368, lng: 2.165 }
-    }
-  },
-  {
-    ...mockHikes[0],
-    id: "barcelona-3",
-    name: "Collserola Viewpoint Path",
-    rating: 4.5,
-    distanceKm: 11,
-    trailhead: {
-      ...mockHikes[0].trailhead,
-      coordinates: { lat: 41.416, lng: 2.094 }
-    }
-  }
-];
-
 vi.mock("../data/providers", () => ({
   defaultHikeProvider: {
     listNearbyHikes: mocks.listNearbyHikesMock
@@ -225,56 +189,16 @@ describe("App recovery states", () => {
     });
   });
 
-  it("shows release QA tab with checklist progress and controls", async () => {
+  it("keeps only browse and shortlist tabs", async () => {
     const user = userEvent.setup();
     mocks.listNearbyHikesMock.mockResolvedValue([]);
 
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: /Release QA/ }));
+    expect(screen.queryByRole("button", { name: /Release QA/i })).toBeNull();
 
-    expect(await screen.findByText("Release readiness")).toBeTruthy();
-    expect(screen.getByText("0 of 5 checks complete.")).toBeTruthy();
-
-    await user.click(screen.getByLabelText("iPhone core flow passes end-to-end"));
-    expect(screen.getByText("1 of 5 checks complete.")).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Mark all complete" }));
-    expect(screen.getByText("5 of 5 checks complete.")).toBeTruthy();
-
-    await user.selectOptions(screen.getByLabelText("Outcome"), "fail");
-    await user.type(screen.getByLabelText("Notes"), "Map handoff failed in split view");
-    await user.click(screen.getByRole("button", { name: "Add QA run" }));
-    expect(screen.getByText("Logged QA runs: 1 (1 failures)")).toBeTruthy();
-    expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
-    expect(screen.getByText("QA outcomes: 0 pass · 1 fail · 0 blocked")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Release QA \(5\/5 · 1 open\)/ })).toBeTruthy();
-
-    await user.selectOptions(screen.getByLabelText("Run filter"), "fail");
-    expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Run distance compliance audit" }));
-    expect(
-      screen.getByText("Result: Unavailable (0 trails checked)")
-    ).toBeTruthy();
-    expect(screen.getByText(/Distance audit unavailable for this location/)).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Copy failed runs" }));
-    const copiedFailedMessage = screen.queryByText("Failed QA runs copied to clipboard.");
-    const clipboardUnavailableMessage = screen.queryByText("Clipboard is unavailable on this device.");
-    expect(Boolean(copiedFailedMessage || clipboardUnavailableMessage)).toBe(true);
-
-    await user.click(screen.getByRole("button", { name: "Mark release ready" }));
-    expect(screen.queryByText("Last sign-off: Not signed")).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByText("Logged QA runs: 0 (0 failures)")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Release QA \(5\/5\)$/ })).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Copy QA summary" }));
-    const copiedMessage = screen.queryByText("QA summary copied to clipboard.");
-    const unavailableMessage = screen.queryByText("Clipboard is unavailable on this device.");
-    expect(Boolean(copiedMessage || unavailableMessage)).toBe(true);
+    await user.click(screen.getByRole("button", { name: /Shortlist/i }));
+    expect(await screen.findByText("Your shortlist is empty.")).toBeTruthy();
   });
 
   it("shows all filtered trails automatically", async () => {
@@ -287,24 +211,4 @@ describe("App recovery states", () => {
     expect(screen.getByRole("heading", { name: "Mock Trail 6", level: 3 })).toBeTruthy();
   });
 
-  it("reports a passing distance audit for a mapped location", async () => {
-    const user = userEvent.setup();
-    mocks.listNearbyHikesMock.mockResolvedValue(barcelonaNearbyMockHikes);
-
-    render(<App />);
-
-    const locationInput = await screen.findByPlaceholderText("Hotel, town, or area");
-    await user.clear(locationInput);
-    await user.type(locationInput, "Barcelona");
-    await user.click(screen.getByRole("button", { name: "OK" }));
-
-    await waitFor(() => {
-      expect(mocks.listNearbyHikesMock).toHaveBeenCalledWith("Barcelona");
-    });
-
-    await user.click(screen.getByRole("button", { name: /Release QA/ }));
-    await user.click(screen.getByRole("button", { name: "Run distance compliance audit" }));
-
-    expect(screen.getByText("Result: Pass (3 checked, 0 violations)")).toBeTruthy();
-  });
 });

@@ -6,34 +6,17 @@ import HikeDetail from "./components/HikeDetail";
 import { defaultHikeProvider } from "./data/providers";
 import { getBaseCoordinatesForLocation, isKnownCatalogLocation } from "./data/locationHikeCatalog";
 import { useGeolocation } from "./hooks/useGeolocation";
+import { trackEvent } from "./lib/telemetry";
+import { filterAndSortHikes } from "./lib/filterHikes";
 import {
-  clearTelemetryEvents,
-  downloadTelemetryEvents,
-  getTelemetryEvents,
-  trackEvent
-} from "./lib/telemetry";
-import { filterAndSortHikes, getDistanceKm } from "./lib/filterHikes";
-import {
-  clearReleaseQaSignoff,
-  clearReleaseQaRuns,
-  clearAppState,
   getActiveTab,
   getRecentBaseLocations,
-  getReleaseQaChecks,
-  getReleaseQaRuns,
-  getReleaseQaSignoff,
   getSavedBaseLocation,
   pushRecentBaseLocation,
-  setReleaseQaChecks,
-  setReleaseQaRuns,
-  setReleaseQaSignoff,
   setActiveTab,
-  setSavedBaseLocation,
-  type ActiveTab,
-  type ReleaseQaRun
+  setSavedBaseLocation
 } from "./lib/appStateStore";
-import { clearShortlist, getShortlist, setShortlist } from "./lib/shortlistStore";
-import { formatTelemetrySummary, getTelemetrySummary } from "./lib/telemetryReport";
+import { getShortlist, setShortlist } from "./lib/shortlistStore";
 import type { BaseLocation, Hike, HikeFilters } from "./types";
 
 const defaultFilters: HikeFilters = {
@@ -50,35 +33,8 @@ const broadenedFilters: HikeFilters = {
   minRating: 3.5
 };
 
-const releaseQaChecklist = [
-  { id: "iphone_core_flow", label: "iPhone core flow passes end-to-end" },
-  { id: "maps_handoff_paths", label: "Google Maps handoff works installed and browser fallback" },
-  { id: "manual_location_denied", label: "Manual base location works after denied location" },
-  { id: "ipad_rotation_split", label: "iPad rotation and split-view keep state intact" },
-  { id: "error_recovery_paths", label: "All empty/error states have recovery actions" }
-] as const;
-
-const qaDevices = ["iPhone Safari", "iPad Safari", "iPad Split View", "Desktop Safari"] as const;
-const qaScenarios = [
-  "Core flow",
-  "Location denied",
-  "Weak network",
-  "Portrait and landscape",
-  "Split view",
-  "Maps handoff"
-] as const;
-
-interface DistanceAuditResult {
-  status: "pass" | "violation" | "unavailable";
-  checkedCount: number;
-  violationCount: number;
-  maxDistanceKm: number;
-  baseLabel: string;
-  ranAtIso: string;
-  violationSummaries: string[];
-}
-
 function App() {
+  const persistedTab = getActiveTab();
   const [baseLocation, setBaseLocation] = useState<BaseLocation>(
     getSavedBaseLocation() ?? { label: "Current area" }
   );
@@ -88,24 +44,12 @@ function App() {
   const [filters, setFilters] = useState<HikeFilters>(defaultFilters);
   const [selectedHikeId, setSelectedHikeId] = useState<string>("");
   const [shortlist, setShortlistState] = useState<string[]>([]);
-  const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
+  const [activeTab, setActiveTabState] = useState<"browse" | "shortlist">(
+    persistedTab === "shortlist" ? "shortlist" : "browse"
+  );
   const [recentBaseLocations, setRecentBaseLocations] = useState<string[]>(() =>
     getRecentBaseLocations()
   );
-  const [releaseQaChecks, setReleaseQaChecksState] = useState<Record<string, boolean>>(() =>
-    getReleaseQaChecks()
-  );
-  const [releaseQaSignoff, setReleaseQaSignoffState] = useState<string | null>(() =>
-    getReleaseQaSignoff()
-  );
-  const [releaseQaRuns, setReleaseQaRunsState] = useState<ReleaseQaRun[]>(() => getReleaseQaRuns());
-  const [qaRunDevice, setQaRunDevice] = useState<string>(qaDevices[0]);
-  const [qaRunScenario, setQaRunScenario] = useState<string>(qaScenarios[0]);
-  const [qaRunOutcome, setQaRunOutcome] = useState<"pass" | "fail" | "blocked">("pass");
-  const [qaRunNotes, setQaRunNotes] = useState("");
-  const [editingQaRunId, setEditingQaRunId] = useState<string | null>(null);
-  const [qaRunFilter, setQaRunFilter] = useState<"all" | "pass" | "fail" | "blocked">("all");
-  const [distanceAuditResult, setDistanceAuditResult] = useState<DistanceAuditResult | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const { coords, error, loading, requestLocation } = useGeolocation();
@@ -125,14 +69,6 @@ function App() {
   useEffect(() => {
     setActiveTab(activeTab);
   }, [activeTab]);
-
-  useEffect(() => {
-    setReleaseQaChecks(releaseQaChecks);
-  }, [releaseQaChecks]);
-
-  useEffect(() => {
-    setReleaseQaRuns(releaseQaRuns);
-  }, [releaseQaRuns]);
 
   useEffect(() => {
     if (coords) {
@@ -210,21 +146,7 @@ function App() {
     () => hikeResults.filter((hike) => shortlist.includes(hike.id)),
     [shortlist, hikeResults]
   );
-  const telemetrySummary = getTelemetrySummary();
-  const qaCompletedCount = releaseQaChecklist.filter((check) => releaseQaChecks[check.id]).length;
-  const qaAllComplete = qaCompletedCount === releaseQaChecklist.length;
-  const qaPasses = releaseQaRuns.filter((run) => run.outcome === "pass").length;
-  const qaFailures = releaseQaRuns.filter((run) => run.outcome === "fail").length;
-  const qaBlocked = releaseQaRuns.filter((run) => run.outcome === "blocked").length;
-  const canMarkReleaseReady = qaAllComplete && releaseQaRuns.length > 0;
-  const visibleQaRuns =
-    qaRunFilter === "all" ? releaseQaRuns : releaseQaRuns.filter((run) => run.outcome === qaRunFilter);
-  const releaseQaTabLabel =
-    qaFailures > 0
-      ? `Release QA (${qaCompletedCount}/${releaseQaChecklist.length} · ${qaFailures} open)`
-      : `Release QA (${qaCompletedCount}/${releaseQaChecklist.length})`;
   const locationHasCatalogSupport = Boolean(baseLocation.coordinates) || isKnownCatalogLocation(baseLocation.label);
-  const shownHikes = filteredHikes;
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -245,13 +167,6 @@ function App() {
     trackEvent("base_location_set_recent", { label });
   };
 
-  const exportTelemetry = () => {
-    const eventCount = getTelemetryEvents().length;
-    const success = downloadTelemetryEvents();
-    trackEvent("telemetry_exported", { success, eventCount });
-    setStatusMessage(success ? "Telemetry export downloaded." : "Unable to export telemetry.");
-  };
-
   const retryHikeLoad = () => {
     setLoadAttempt((current) => current + 1);
     setStatusMessage(`Retrying hikes for ${baseLocation.label}...`);
@@ -269,298 +184,11 @@ function App() {
     trackEvent("filters_broadened", { base: baseLocation.label });
   };
 
-  const toggleReleaseQaCheck = (checkId: string) => {
-    setReleaseQaChecksState((current) => ({
-      ...current,
-      [checkId]: !current[checkId]
-    }));
-  };
-
-  const markAllReleaseQaChecks = () => {
-    const allChecked = Object.fromEntries(releaseQaChecklist.map((check) => [check.id, true]));
-    setReleaseQaChecksState(allChecked);
-    setStatusMessage("Release QA checklist marked complete.");
-  };
-
-  const resetReleaseQaChecks = () => {
-    setReleaseQaChecksState({});
-    clearReleaseQaSignoff();
-    clearReleaseQaRuns();
-    setReleaseQaSignoffState(null);
-    setReleaseQaRunsState([]);
-    setStatusMessage("Release QA checklist reset.");
-  };
-
-  const markReleaseReady = () => {
-    if (distanceAuditResult?.status === "violation") {
-      setStatusMessage("Resolve distance audit violations before marking release ready.");
-      trackEvent("release_signoff_blocked_distance_violation", {
-        base: baseLocation.label,
-        violationCount: distanceAuditResult.violationCount
-      });
-      return;
-    }
-
-    const signedAt = new Date().toISOString();
-    setReleaseQaSignoff(signedAt);
-    setReleaseQaSignoffState(signedAt);
-    setStatusMessage("Release QA sign-off captured.");
-  };
-
-  const addReleaseQaRun = () => {
-    const trimmedNotes = qaRunNotes.trim();
-
-    if (editingQaRunId) {
-      setReleaseQaRunsState((current) =>
-        current.map((run) =>
-          run.id === editingQaRunId
-            ? {
-                ...run,
-                device: qaRunDevice,
-                scenario: qaRunScenario,
-                outcome: qaRunOutcome,
-                notes: trimmedNotes,
-                timestampIso: new Date().toISOString()
-              }
-            : run
-        )
-      );
-      setEditingQaRunId(null);
-      setQaRunNotes("");
-      setStatusMessage("Release QA run updated.");
-      return;
-    }
-
-    const nextRun: ReleaseQaRun = {
-      id: `qa-${Date.now()}`,
-      device: qaRunDevice,
-      scenario: qaRunScenario,
-      outcome: qaRunOutcome,
-      notes: trimmedNotes,
-      timestampIso: new Date().toISOString()
-    };
-
-    setReleaseQaRunsState((current) => [nextRun, ...current].slice(0, 30));
-    setQaRunNotes("");
-    setStatusMessage("Release QA run logged.");
-  };
-
-  const editReleaseQaRun = (runId: string) => {
-    const existing = releaseQaRuns.find((run) => run.id === runId);
-    if (!existing) {
-      return;
-    }
-    setEditingQaRunId(runId);
-    setQaRunDevice(existing.device);
-    setQaRunScenario(existing.scenario);
-    setQaRunOutcome(existing.outcome);
-    setQaRunNotes(existing.notes);
-    setStatusMessage("Editing selected QA run.");
-  };
-
-  const cancelEditingReleaseQaRun = () => {
-    setEditingQaRunId(null);
-    setQaRunDevice(qaDevices[0]);
-    setQaRunScenario(qaScenarios[0]);
-    setQaRunOutcome("pass");
-    setQaRunNotes("");
-    setStatusMessage("QA run editing cancelled.");
-  };
-
-  const deleteReleaseQaRun = (runId: string) => {
-    setReleaseQaRunsState((current) => current.filter((run) => run.id !== runId));
-    if (editingQaRunId === runId) {
-      cancelEditingReleaseQaRun();
-      return;
-    }
-    setStatusMessage("Release QA run removed.");
-  };
-
-  const exportReleaseQaRuns = () => {
-    if (releaseQaRuns.length === 0) {
-      setStatusMessage("No QA runs to export yet.");
-      return;
-    }
-
-    try {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        runs: releaseQaRuns
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "release-qa-runs.json";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      setStatusMessage("QA run log exported.");
-    } catch {
-      setStatusMessage("Unable to export QA run log.");
-    }
-  };
-
-  const copyFailedQaRuns = async () => {
-    const failedRuns = releaseQaRuns.filter((run) => run.outcome === "fail");
-    if (failedRuns.length === 0) {
-      setStatusMessage("No failed QA runs to copy.");
-      return;
-    }
-
-    const failedSummary = [
-      "Failed QA runs",
-      ...failedRuns.map((run) => {
-        const notes = run.notes ? ` | Notes: ${run.notes}` : "";
-        return `- ${run.timestampIso} | ${run.device} | ${run.scenario}${notes}`;
-      })
-    ].join("\n");
-
-    if (!navigator.clipboard || !navigator.clipboard.writeText) {
-      setStatusMessage("Clipboard is unavailable on this device.");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(failedSummary);
-      setStatusMessage("Failed QA runs copied to clipboard.");
-    } catch {
-      setStatusMessage("Unable to copy failed QA runs.");
-    }
-  };
-
-  const copyQaSummary = async () => {
-    const checklistLines = releaseQaChecklist.map((check) => {
-      const complete = releaseQaChecks[check.id] ? "[x]" : "[ ]";
-      return `${complete} ${check.label}`;
-    });
-
-    const summaryText = [
-      "Release QA Checklist",
-      ...checklistLines,
-      "",
-      formatTelemetrySummary(telemetrySummary),
-      "",
-      "Distance audit",
-      distanceAuditResult
-        ? `Result: ${distanceAuditResult.status} | Checked: ${distanceAuditResult.checkedCount} | Violations: ${distanceAuditResult.violationCount} | Max distance: ${distanceAuditResult.maxDistanceKm} km | Base: ${distanceAuditResult.baseLabel}`
-        : "Result: not run",
-      ...(distanceAuditResult?.violationSummaries.length
-        ? ["Violations:", ...distanceAuditResult.violationSummaries.map((summary) => `- ${summary}`)]
-        : []),
-      `Sign-off: ${releaseQaSignoff ?? "Not signed"}`,
-      "",
-      "Recent QA runs:",
-      ...releaseQaRuns.map((run) => {
-        const notes = run.notes ? ` | Notes: ${run.notes}` : "";
-        return `- ${run.timestampIso} | ${run.device} | ${run.scenario} | ${run.outcome}${notes}`;
-      })
-    ].join("\n");
-
-    if (!navigator.clipboard || !navigator.clipboard.writeText) {
-      setStatusMessage("Clipboard is unavailable on this device.");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(summaryText);
-      setStatusMessage("QA summary copied to clipboard.");
-    } catch {
-      setStatusMessage("Unable to copy QA summary.");
-    }
-  };
-
-  const runDistanceComplianceAudit = () => {
-    if (!resolvedBaseCoordinates) {
-      setDistanceAuditResult({
-        status: "unavailable",
-        checkedCount: shownHikes.length,
-        violationCount: 0,
-        maxDistanceKm: filters.maxDistanceKm,
-        baseLabel: baseLocation.label,
-        ranAtIso: new Date().toISOString(),
-        violationSummaries: []
-      });
-      trackEvent("distance_audit_unavailable", {
-        base: baseLocation.label,
-        checkedCount: shownHikes.length,
-        maxDistanceKm: filters.maxDistanceKm
-      });
-      setStatusMessage("Distance audit unavailable for this location. Set a mapped city or current coordinates.");
-      return;
-    }
-
-    const violationSummaries = shownHikes
-      .map((hike) => {
-        const distance = getDistanceKm(resolvedBaseCoordinates, hike.trailhead.coordinates);
-        return {
-          hikeName: hike.name,
-          distance
-        };
-      })
-      .filter((item) => item.distance > filters.maxDistanceKm)
-      .map((item) => `${item.hikeName} (${item.distance.toFixed(1)} km)`);
-
-    const nextResult: DistanceAuditResult = {
-      status: violationSummaries.length === 0 ? "pass" : "violation",
-      checkedCount: shownHikes.length,
-      violationCount: violationSummaries.length,
-      maxDistanceKm: filters.maxDistanceKm,
-      baseLabel: baseLocation.label,
-      ranAtIso: new Date().toISOString(),
-      violationSummaries
-    };
-
-    setDistanceAuditResult(nextResult);
-    trackEvent("distance_audit_run", {
-      base: baseLocation.label,
-      checkedCount: nextResult.checkedCount,
-      violationCount: nextResult.violationCount,
-      maxDistanceKm: filters.maxDistanceKm
-    });
-    setStatusMessage(
-      nextResult.violationCount === 0
-        ? `Distance audit passed for ${nextResult.checkedCount} shown trails.`
-        : `Distance audit found ${nextResult.violationCount} distance violations.`
-    );
-  };
-
-  const clearAllLocalData = () => {
-    const confirmed = window.confirm("Clear all local app data on this device?");
-    if (!confirmed) {
-      return;
-    }
-
-    clearAppState();
-    clearShortlist();
-    clearTelemetryEvents();
-
-    setBaseLocation({ label: "Current area" });
-    setShortlistState([]);
-    setActiveTabState("browse");
-    setFilters(defaultFilters);
-    setSelectedHikeId("");
-    setRecentBaseLocations([]);
-    setReleaseQaChecksState({});
-    setReleaseQaSignoffState(null);
-    setReleaseQaRunsState([]);
-    setStatusMessage("Local data cleared.");
-  };
-
   return (
     <main className="app-shell">
       <header>
         <h1>Holiday Hiking Planner</h1>
-        <p>Find a highly rated nearby hike and hand off directions to Google Maps.</p>
-        <div className="header-actions">
-          <button type="button" className="secondary" onClick={exportTelemetry}>
-            Export telemetry JSON
-          </button>
-          <button type="button" className="secondary" onClick={clearAllLocalData}>
-            Clear local data
-          </button>
-        </div>
+        <p>Finding trails near you.</p>
         {statusMessage && <p className="status-note">{statusMessage}</p>}
       </header>
 
@@ -578,13 +206,6 @@ function App() {
           onClick={() => setActiveTabState("shortlist")}
         >
           Shortlist ({shortlist.length})
-        </button>
-        <button
-          type="button"
-          className={activeTab === "qa" ? "tab-active" : "secondary"}
-          onClick={() => setActiveTabState("qa")}
-        >
-          {releaseQaTabLabel}
         </button>
       </section>
 
@@ -637,9 +258,7 @@ function App() {
           <h2>
             {activeTab === "browse"
               ? `Top nearby hikes for ${baseLocation.label}`
-              : activeTab === "shortlist"
-                ? "Your shortlist"
-                : "Release QA checklist"}
+              : "Your shortlist"}
           </h2>
           {activeTab === "browse" && hikesLoading ? (
             <div className="card empty-state">
@@ -709,7 +328,7 @@ function App() {
                 />
               ))
             )
-          ) : activeTab === "shortlist" ? (
+          ) : (
             shortlistedHikes.length === 0 ? (
             <div className="card empty-state">
               <p>Your shortlist is empty.</p>
@@ -729,209 +348,18 @@ function App() {
                 />
               ))
             )
-          ) : (
-            <section className="card qa-checklist">
-              <p>
-                {qaCompletedCount} of {releaseQaChecklist.length} checks complete.
-              </p>
-              <p>
-                Logged QA runs: {releaseQaRuns.length} ({qaFailures} failures)
-              </p>
-              <div className="qa-list">
-                {releaseQaChecklist.map((check) => (
-                  <label key={check.id} className="qa-item">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(releaseQaChecks[check.id])}
-                      onChange={() => toggleReleaseQaCheck(check.id)}
-                    />
-                    <span>{check.label}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="empty-state-actions">
-                <button type="button" className="secondary" onClick={markAllReleaseQaChecks}>
-                  Mark all complete
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={markReleaseReady}
-                  disabled={!canMarkReleaseReady}
-                >
-                  Mark release ready
-                </button>
-                <button type="button" className="secondary" onClick={resetReleaseQaChecks}>
-                  Reset checklist
-                </button>
-              </div>
-
-              <section className="qa-run-form">
-                <h3>Log QA run</h3>
-                <div className="filter-row">
-                  <label>
-                    Device
-                    <select value={qaRunDevice} onChange={(event) => setQaRunDevice(event.target.value)}>
-                      {qaDevices.map((device) => (
-                        <option key={device} value={device}>
-                          {device}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Scenario
-                    <select value={qaRunScenario} onChange={(event) => setQaRunScenario(event.target.value)}>
-                      {qaScenarios.map((scenario) => (
-                        <option key={scenario} value={scenario}>
-                          {scenario}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <label>
-                  Outcome
-                  <select
-                    value={qaRunOutcome}
-                    onChange={(event) => setQaRunOutcome(event.target.value as "pass" | "fail" | "blocked")}
-                  >
-                    <option value="pass">Pass</option>
-                    <option value="fail">Fail</option>
-                    <option value="blocked">Blocked</option>
-                  </select>
-                </label>
-                <label>
-                  Notes
-                  <textarea
-                    value={qaRunNotes}
-                    onChange={(event) => setQaRunNotes(event.target.value)}
-                    placeholder="What happened during this run?"
-                    rows={3}
-                  />
-                </label>
-                <button type="button" className="secondary" onClick={addReleaseQaRun}>
-                  {editingQaRunId ? "Update QA run" : "Add QA run"}
-                </button>
-                {editingQaRunId && (
-                  <button type="button" className="secondary" onClick={cancelEditingReleaseQaRun}>
-                    Cancel edit
-                  </button>
-                )}
-              </section>
-
-              {releaseQaRuns.length > 0 && (
-                <>
-                  <div className="qa-run-controls">
-                    <label>
-                      Run filter
-                      <select
-                        value={qaRunFilter}
-                        onChange={(event) =>
-                          setQaRunFilter(event.target.value as "all" | "pass" | "fail" | "blocked")
-                        }
-                      >
-                        <option value="all">All</option>
-                        <option value="pass">Pass</option>
-                        <option value="fail">Fail</option>
-                        <option value="blocked">Blocked</option>
-                      </select>
-                    </label>
-                    <button type="button" className="secondary" onClick={copyFailedQaRuns}>
-                      Copy failed runs
-                    </button>
-                  </div>
-                  <ul className="qa-run-list">
-                    {visibleQaRuns.slice(0, 8).map((run) => (
-                      <li key={run.id}>
-                        <div className="qa-run-row">
-                          <span>
-                            <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
-                            {run.notes ? ` · ${run.notes}` : ""}
-                          </span>
-                          <div className="qa-run-row-actions">
-                            <button type="button" className="secondary" onClick={() => editReleaseQaRun(run.id)}>
-                              Edit
-                            </button>
-                            <button type="button" className="secondary" onClick={() => deleteReleaseQaRun(run.id)}>
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </section>
           )}
         </section>
 
-        {activeTab === "qa" ? (
-          <section className="card qa-summary">
-            <h2>Release readiness</h2>
-            <p>
-              Status: {qaAllComplete ? "Ready for release checks" : "Checklist still in progress"}
-            </p>
-            <p>Total telemetry events: {telemetrySummary.totalEvents}</p>
-            <p>Maps handoff events: {telemetrySummary.mapsHandoffCount}</p>
-            <p>Provider fallback events: {telemetrySummary.fallbackUsedCount}</p>
-            <p>Fallback rate: {telemetrySummary.fallbackRatePercent}%</p>
-            <p>
-              QA outcomes: {qaPasses} pass · {qaFailures} fail · {qaBlocked} blocked
-            </p>
-            <p>
-              Last sign-off: {releaseQaSignoff ? new Date(releaseQaSignoff).toLocaleString() : "Not signed"}
-            </p>
-            <section className="qa-distance-audit">
-              <h3>Distance compliance audit</h3>
-              <p>
-                Checks currently shown trails for {baseLocation.label} against max distance {filters.maxDistanceKm}
-                km.
-              </p>
-              <button type="button" className="secondary" onClick={runDistanceComplianceAudit}>
-                Run distance compliance audit
-              </button>
-              {distanceAuditResult && (
-                <>
-                  <p>
-                    Result: {distanceAuditResult.status === "pass"
-                      ? `Pass (${distanceAuditResult.checkedCount} checked, 0 violations)`
-                      : distanceAuditResult.status === "violation"
-                        ? `Fail (${distanceAuditResult.checkedCount} checked, ${distanceAuditResult.violationCount} violations)`
-                        : `Unavailable (${distanceAuditResult.checkedCount} trails checked)`}
-                  </p>
-                  <p>
-                    Base: {distanceAuditResult.baseLabel} · Max distance: {distanceAuditResult.maxDistanceKm} km
-                  </p>
-                  {distanceAuditResult.status === "violation" && distanceAuditResult.violationSummaries.length > 0 && (
-                    <ul className="qa-audit-list">
-                      {distanceAuditResult.violationSummaries.slice(0, 5).map((summary) => (
-                        <li key={summary}>{summary}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-            </section>
-            <button type="button" className="secondary" onClick={copyQaSummary}>
-              Copy QA summary
-            </button>
-            <button type="button" className="secondary" onClick={exportReleaseQaRuns}>
-              Export QA runs JSON
-            </button>
-          </section>
-        ) : (
-          <HikeDetail
-            hike={selectedHike}
-            shortlisted={selectedHike ? shortlist.includes(selectedHike.id) : false}
-            onToggleShortlist={() => {
-              if (selectedHike) {
-                toggleShortlist(selectedHike.id);
-              }
-            }}
-          />
-        )}
+        <HikeDetail
+          hike={selectedHike}
+          shortlisted={selectedHike ? shortlist.includes(selectedHike.id) : false}
+          onToggleShortlist={() => {
+            if (selectedHike) {
+              toggleShortlist(selectedHike.id);
+            }
+          }}
+        />
       </section>
     </main>
   );

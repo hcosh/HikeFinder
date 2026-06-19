@@ -241,7 +241,7 @@ describe("App recovery states", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Trails shown")).toBeTruthy();
+    expect(await screen.findByText(/Trails shown:/)).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "3" }));
     expect(screen.queryByRole("heading", { name: "Mock Trail 4", level: 3 })).toBeNull();

@@ -19,14 +19,12 @@ describe("localHikeProvider", () => {
     );
   });
 
-  it("returns global catalog hikes for non-Maui/non-Stavanger base locations", async () => {
+  it("returns Barcelona-relevant hikes for Barcelona base location", async () => {
     const hikes = await localHikeProvider.listNearbyHikes("Barcelona");
 
     expect(hikes.map((hike) => hike.name)).toEqual(
-      expect.arrayContaining(["Montserrat Sant Jeroni Trail", "Royal National Coast Track"])
+      expect.arrayContaining(["Montserrat Sant Jeroni Trail", "Collserola Carretera de les Aigues"])
     );
-    expect(hikes.map((hike) => hike.name)).not.toEqual(
-      expect.arrayContaining(["Waihee Ridge Trail"])
-    );
+    expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
   });
 });

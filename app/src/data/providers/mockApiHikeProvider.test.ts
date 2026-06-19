@@ -36,7 +36,7 @@ describe("MockApiHikeProvider", () => {
     const hikes = await provider.listNearbyHikes("Athens");
 
     expect(hikes.map((hike) => hike.name)).toEqual(
-      expect.arrayContaining(["Lycabettus Hill Loop", "Sugarloaf Foothills Loop"])
+      expect.arrayContaining(["Lycabettus Hill Loop", "Hymettus Ridge Traverse"])
     );
     expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
   });

@@ -1,7 +1,7 @@
 import type { Hike, HikeProvider } from "../../types";
 import { normalizeRawHike, type RawHikeRecord } from "../normalizeHike";
 import {
-  globalRawHikeRecords,
+  getGlobalCatalogRawRecordsForLocation,
   resolveLocationCatalog,
   stavangerRawHikeRecords
 } from "../locationHikeCatalog";
@@ -106,7 +106,7 @@ export class MockApiHikeProvider implements HikeProvider {
         ? rawHikeRecords
         : catalog === "stavanger"
           ? stavangerRawHikeRecords
-          : globalRawHikeRecords);
+          : getGlobalCatalogRawRecordsForLocation(baseLocationLabel));
 
     const normalized = selectedRecords.flatMap((record) => {
       try {

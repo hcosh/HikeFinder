@@ -1,6 +1,10 @@
 import { hikes } from "../hikes";
 import type { Hike, HikeProvider } from "../../types";
-import { globalHikes, resolveLocationCatalog, stavangerHikes } from "../locationHikeCatalog";
+import {
+  getGlobalCatalogHikesForLocation,
+  resolveLocationCatalog,
+  stavangerHikes
+} from "../locationHikeCatalog";
 
 class LocalHikeProvider implements HikeProvider {
   async listNearbyHikes(baseLocationLabel: string): Promise<Hike[]> {
@@ -13,7 +17,7 @@ class LocalHikeProvider implements HikeProvider {
     if (catalog === "stavanger") {
       return stavangerHikes;
     }
-    return globalHikes;
+    return getGlobalCatalogHikesForLocation(baseLocationLabel);
   }
 }
 

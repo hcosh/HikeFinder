@@ -75,7 +75,7 @@ function App() {
   const [hikesLoading, setHikesLoading] = useState(false);
   const [hikesError, setHikesError] = useState("");
   const [filters, setFilters] = useState<HikeFilters>(defaultFilters);
-  const [visibleTrailCount, setVisibleTrailCount] = useState<3 | 5 | 99>(5);
+  const [visibleTrailCount, setVisibleTrailCount] = useState<3 | 5 | 99>(3);
   const [selectedHikeId, setSelectedHikeId] = useState<string>("");
   const [shortlist, setShortlistState] = useState<string[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
@@ -177,6 +177,10 @@ function App() {
 
   const selectedHike: Hike | null =
     filteredHikes.find((h) => h.id === selectedHikeId) ?? filteredHikes[0] ?? null;
+  const displayedTrailCount = Math.min(
+    visibleTrailCount === 99 ? filteredHikes.length : visibleTrailCount,
+    filteredHikes.length
+  );
 
   const searchAlreadyBroad =
     filters.difficulty === broadenedFilters.difficulty &&
@@ -552,7 +556,9 @@ function App() {
           </h2>
           {activeTab === "browse" && filteredHikes.length > 3 && (
             <section className="card trail-count-controls" aria-label="Trail count controls">
-              <p>Trails shown</p>
+              <p>
+                Trails shown: {displayedTrailCount} of {filteredHikes.length}
+              </p>
               <div className="trail-count-buttons">
                 <button
                   type="button"
@@ -627,7 +633,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              filteredHikes.slice(0, visibleTrailCount).map((hike) => (
+              filteredHikes.slice(0, displayedTrailCount).map((hike) => (
                 <HikeCard
                   key={hike.id}
                   hike={hike}

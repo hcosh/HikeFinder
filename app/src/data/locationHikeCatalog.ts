@@ -14,6 +14,11 @@ const stavangerKeywordMatches = ["stavanger", "rogaland", "norway", "sandnes", "
 
 export type LocationCatalog = "maui" | "stavanger" | "global";
 
+const athensKeywordMatches = ["athens", "greece", "athina"];
+const barcelonaKeywordMatches = ["barcelona", "spain", "catalonia", "madrid"];
+const sydneyKeywordMatches = ["sydney", "australia", "new south wales", "nsw"];
+const tokyoKeywordMatches = ["tokyo", "japan", "kyoto", "osaka"];
+
 export function isStavangerLocation(baseLocationLabel: string): boolean {
   const normalized = baseLocationLabel.toLowerCase();
   return stavangerKeywordMatches.some((keyword) => normalized.includes(keyword));
@@ -25,11 +30,20 @@ export function isMauiLocation(baseLocationLabel: string): boolean {
 }
 
 export function resolveLocationCatalog(baseLocationLabel: string): LocationCatalog {
+  const normalized = baseLocationLabel.toLowerCase();
   if (isMauiLocation(baseLocationLabel)) {
     return "maui";
   }
   if (isStavangerLocation(baseLocationLabel)) {
     return "stavanger";
+  }
+  if (
+    athensKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    sydneyKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))
+  ) {
+    return "global";
   }
   return "global";
 }
@@ -448,22 +462,365 @@ export const globalHikes: Hike[] = [
   }
 ];
 
-export const globalRawHikeRecords: RawHikeRecord[] = globalHikes.map((hike) => ({
-  id: hike.id,
-  title: hike.name,
-  rating: hike.rating,
-  reviewCount: hike.reviews,
-  difficulty: hike.difficulty,
-  estimatedHours: hike.hours,
-  distanceKm: hike.distanceKm,
-  highlights: hike.highlights,
-  description: hike.summary,
-  trailhead: {
-    name: hike.trailhead.label,
-    lat: hike.trailhead.coordinates.lat,
-    lng: hike.trailhead.coordinates.lng,
-    parkingNote: hike.trailhead.parkingNote,
-    qualityConfidence: hike.trailhead.qualityConfidence,
-    source: hike.trailhead.source
+export const athensHikes: Hike[] = [
+  {
+    id: "lycabettus-loop",
+    name: "Lycabettus Hill Loop",
+    rating: 4.4,
+    reviews: 760,
+    difficulty: "easy",
+    hours: 1.8,
+    distanceKm: 4.1,
+    highlights: ["Urban summit", "Sunset viewpoint", "Quick access"],
+    summary: "A short city-adjacent loop with quick elevation and broad skyline views.",
+    trailhead: {
+      label: "Lycabettus base path",
+      coordinates: { lat: 37.9838, lng: 23.7432 },
+      parkingNote: "Prefer transit access; limited street parking.",
+      qualityConfidence: 0.9,
+      source: "Athens municipality paths"
+    }
+  },
+  {
+    id: "hymettus-traverse",
+    name: "Hymettus Ridge Traverse",
+    rating: 4.5,
+    reviews: 520,
+    difficulty: "moderate",
+    hours: 3.8,
+    distanceKm: 9.4,
+    highlights: ["Aegean outlooks", "Pine trails", "Long ridge sections"],
+    summary: "A longer ridge walk above Athens with broad views toward the coast.",
+    trailhead: {
+      label: "Kaisariani Monastery trailhead",
+      coordinates: { lat: 37.9638, lng: 23.8031 },
+      parkingNote: "Small lot near monastery entrance.",
+      qualityConfidence: 0.9,
+      source: "Attica outdoor routes"
+    }
+  },
+  {
+    id: "filopappou-hills",
+    name: "Filopappou Hills Loop",
+    rating: 4.3,
+    reviews: 690,
+    difficulty: "easy",
+    hours: 1.4,
+    distanceKm: 3.1,
+    highlights: ["Acropolis views", "Ancient paths", "Low-commitment route"],
+    summary: "A short scenic loop through historic hills with iconic city panoramas.",
+    trailhead: {
+      label: "Filopappou southwest entrance",
+      coordinates: { lat: 37.9678, lng: 23.7168 },
+      parkingNote: "Best accessed on foot or metro.",
+      qualityConfidence: 0.88,
+      source: "Athens trail map"
+    }
+  },
+  {
+    id: "parnitha-bafi",
+    name: "Parnitha Bafi Route",
+    rating: 4.6,
+    reviews: 430,
+    difficulty: "moderate",
+    hours: 4.6,
+    distanceKm: 11.3,
+    highlights: ["Mountain refuge", "Forest ascents", "Cooler summer climate"],
+    summary: "A mountain-day option north of Athens with longer shaded sections.",
+    trailhead: {
+      label: "Parnitha cable car upper station",
+      coordinates: { lat: 38.1575, lng: 23.7346 },
+      parkingNote: "Use cable car access and start from the upper station.",
+      qualityConfidence: 0.89,
+      source: "Greek mountain federation"
+    }
   }
-}));
+];
+
+export const barcelonaHikes: Hike[] = [
+  {
+    id: "montserrat-sant-jeroni",
+    name: "Montserrat Sant Jeroni Trail",
+    rating: 4.8,
+    reviews: 1230,
+    difficulty: "moderate",
+    hours: 4.5,
+    distanceKm: 10.2,
+    highlights: ["Rock needle formations", "Monastery views", "Catalonia ridges"],
+    summary: "A classic ascent in the Montserrat massif ending at broad ridge-top viewpoints.",
+    trailhead: {
+      label: "Montserrat Monastery trail access",
+      coordinates: { lat: 41.5932, lng: 1.8376 },
+      parkingNote: "Monastery parking + train access options.",
+      qualityConfidence: 0.95,
+      source: "Catalonia hiking federation"
+    }
+  },
+  {
+    id: "collserola-carretera-aigues",
+    name: "Collserola Carretera de les Aigues",
+    rating: 4.5,
+    reviews: 880,
+    difficulty: "easy",
+    hours: 2.5,
+    distanceKm: 8,
+    highlights: ["City overlooks", "Wide gravel paths", "Flexible distance"],
+    summary: "A panoramic ridge path above Barcelona with easy grades and skyline views.",
+    trailhead: {
+      label: "Plaça Mireia access point",
+      coordinates: { lat: 41.4037, lng: 2.1147 },
+      parkingNote: "Small parking zones around upper access roads.",
+      qualityConfidence: 0.9,
+      source: "Parc de Collserola"
+    }
+  },
+  {
+    id: "montjuic-gardens-loop",
+    name: "Montjuic Gardens Loop",
+    rating: 4.3,
+    reviews: 640,
+    difficulty: "easy",
+    hours: 1.7,
+    distanceKm: 4.4,
+    highlights: ["Castle viewpoints", "Garden paths", "Urban-access trail"],
+    summary: "A compact hill loop combining greenery, viewpoints, and city landmarks.",
+    trailhead: {
+      label: "Montjuic funicular upper station",
+      coordinates: { lat: 41.3637, lng: 2.1659 },
+      parkingNote: "Public transit recommended over driving.",
+      qualityConfidence: 0.87,
+      source: "Barcelona parks routes"
+    }
+  },
+  {
+    id: "la-mola-summit",
+    name: "La Mola Summit Trail",
+    rating: 4.7,
+    reviews: 570,
+    difficulty: "moderate",
+    hours: 4,
+    distanceKm: 9.1,
+    highlights: ["Rocky summit", "Monastery ruins", "Regional park terrain"],
+    summary: "A rewarding day hike northwest of Barcelona with a broad summit panorama.",
+    trailhead: {
+      label: "Can Robert trail parking",
+      coordinates: { lat: 41.6378, lng: 2.021 },
+      parkingNote: "Arrive early on weekends for parking availability.",
+      qualityConfidence: 0.9,
+      source: "Sant Llorenc park authority"
+    }
+  }
+];
+
+export const sydneyHikes: Hike[] = [
+  {
+    id: "royal-national-coast-track",
+    name: "Royal National Coast Track",
+    rating: 4.6,
+    reviews: 980,
+    difficulty: "moderate",
+    hours: 5,
+    distanceKm: 9.5,
+    highlights: ["Clifftop boardwalks", "Ocean vistas", "Eucalypt forest"],
+    summary: "A varied coastal route near Sydney with beaches, bluffs, and forest sections.",
+    trailhead: {
+      label: "Bundeena Ferry Wharf",
+      coordinates: { lat: -34.0832, lng: 151.1494 },
+      parkingNote: "Street parking nearby; ferry terminal is walk-in friendly.",
+      qualityConfidence: 0.91,
+      source: "NSW parks route data"
+    }
+  },
+  {
+    id: "spit-to-manly",
+    name: "Spit to Manly Track",
+    rating: 4.7,
+    reviews: 1450,
+    difficulty: "moderate",
+    hours: 4.5,
+    distanceKm: 10,
+    highlights: ["Harbor coves", "Bushland sections", "Waterfront finish"],
+    summary: "An iconic Sydney harbor-side point-to-point hike with varied terrain.",
+    trailhead: {
+      label: "Spit Bridge southern access",
+      coordinates: { lat: -33.8028, lng: 151.248 },
+      parkingNote: "Bus access is usually easier than parking.",
+      qualityConfidence: 0.94,
+      source: "NSW great walks"
+    }
+  },
+  {
+    id: "bondi-coogee",
+    name: "Bondi to Coogee Coastal Walk",
+    rating: 4.8,
+    reviews: 2300,
+    difficulty: "easy",
+    hours: 2,
+    distanceKm: 6,
+    highlights: ["Beach cliffs", "Lookout points", "High-amenity route"],
+    summary: "A classic and accessible Sydney coastal route with frequent viewpoints.",
+    trailhead: {
+      label: "Bondi Icebergs access stairs",
+      coordinates: { lat: -33.8913, lng: 151.2767 },
+      parkingNote: "Transit recommended due heavy beach traffic.",
+      qualityConfidence: 0.95,
+      source: "City of Sydney walks"
+    }
+  },
+  {
+    id: "blue-mountains-grand-canyon",
+    name: "Grand Canyon Track",
+    rating: 4.7,
+    reviews: 1100,
+    difficulty: "moderate",
+    hours: 3,
+    distanceKm: 6.3,
+    highlights: ["Fern gullies", "Sandstone walls", "Waterfall sections"],
+    summary: "A lush circuit in the Blue Mountains with shaded canyon terrain.",
+    trailhead: {
+      label: "Evans Lookout parking",
+      coordinates: { lat: -33.6344, lng: 150.2884 },
+      parkingNote: "Large lot but busy during mid-day hours.",
+      qualityConfidence: 0.93,
+      source: "Blue Mountains NP"
+    }
+  }
+];
+
+export const tokyoHikes: Hike[] = [
+  {
+    id: "mt-takao-1",
+    name: "Mount Takao Trail 1",
+    rating: 4.6,
+    reviews: 2100,
+    difficulty: "easy",
+    hours: 2.5,
+    distanceKm: 5.6,
+    highlights: ["Temple route", "Forest ascent", "Fuji views on clear days"],
+    summary: "Tokyo's most popular summit day hike with clear wayfinding and transit access.",
+    trailhead: {
+      label: "Takaosanguchi Station",
+      coordinates: { lat: 35.6251, lng: 139.2437 },
+      parkingNote: "Direct train access preferred; parking is limited.",
+      qualityConfidence: 0.96,
+      source: "Tokyo metro mountains guide"
+    }
+  },
+  {
+    id: "mt-mitake-rock-garden",
+    name: "Mitake Rock Garden Loop",
+    rating: 4.7,
+    reviews: 980,
+    difficulty: "moderate",
+    hours: 4,
+    distanceKm: 9,
+    highlights: ["River gorge", "Shrine section", "Mossy forest paths"],
+    summary: "A longer Okutama-area loop with diverse forest and creek scenery.",
+    trailhead: {
+      label: "Mitake cable car upper station",
+      coordinates: { lat: 35.8066, lng: 139.1494 },
+      parkingNote: "Rail + cable car combination is most convenient.",
+      qualityConfidence: 0.93,
+      source: "Tokyo prefecture trails"
+    }
+  },
+  {
+    id: "jinba-to-takao",
+    name: "Mount Jinba to Takao Traverse",
+    rating: 4.8,
+    reviews: 740,
+    difficulty: "hard",
+    hours: 6,
+    distanceKm: 14.2,
+    highlights: ["Ridgeline traverse", "Tea house stops", "Long mountain day"],
+    summary: "A classic ridge traverse west of Tokyo for hikers wanting a full-day effort.",
+    trailhead: {
+      label: "Jinba Kogen bus stop",
+      coordinates: { lat: 35.6755, lng: 139.1672 },
+      parkingNote: "Bus links from Takao area on regular schedule.",
+      qualityConfidence: 0.9,
+      source: "Okutama mountain registry"
+    }
+  },
+  {
+    id: "nokogiriyama-chiba",
+    name: "Nokogiriyama Summit Loop",
+    rating: 4.5,
+    reviews: 650,
+    difficulty: "moderate",
+    hours: 3.5,
+    distanceKm: 7.1,
+    highlights: ["Cliff viewpoints", "Temple carvings", "Tokyo Bay outlook"],
+    summary: "A Chiba-side mountain loop reachable from Tokyo with dramatic viewpoints.",
+    trailhead: {
+      label: "Hama-Kanaya station approach",
+      coordinates: { lat: 35.1571, lng: 139.8232 },
+      parkingNote: "Ferry and rail both available for access.",
+      qualityConfidence: 0.89,
+      source: "Kanto trails portal"
+    }
+  }
+];
+
+function hikesToRawRecords(records: Hike[]): RawHikeRecord[] {
+  return records.map((hike) => ({
+    id: hike.id,
+    title: hike.name,
+    rating: hike.rating,
+    reviewCount: hike.reviews,
+    difficulty: hike.difficulty,
+    estimatedHours: hike.hours,
+    distanceKm: hike.distanceKm,
+    highlights: hike.highlights,
+    description: hike.summary,
+    trailhead: {
+      name: hike.trailhead.label,
+      lat: hike.trailhead.coordinates.lat,
+      lng: hike.trailhead.coordinates.lng,
+      parkingNote: hike.trailhead.parkingNote,
+      transitOptions: hike.trailhead.transitOptions,
+      qualityConfidence: hike.trailhead.qualityConfidence,
+      source: hike.trailhead.source
+    }
+  }));
+}
+
+export const globalRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(globalHikes);
+export const athensRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(athensHikes);
+export const barcelonaRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(barcelonaHikes);
+export const sydneyRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(sydneyHikes);
+export const tokyoRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(tokyoHikes);
+
+export function getGlobalCatalogHikesForLocation(baseLocationLabel: string): Hike[] {
+  const normalized = baseLocationLabel.toLowerCase();
+  if (athensKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return athensHikes;
+  }
+  if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return barcelonaHikes;
+  }
+  if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return sydneyHikes;
+  }
+  if (tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return tokyoHikes;
+  }
+  return globalHikes;
+}
+
+export function getGlobalCatalogRawRecordsForLocation(baseLocationLabel: string): RawHikeRecord[] {
+  const normalized = baseLocationLabel.toLowerCase();
+  if (athensKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return athensRawHikeRecords;
+  }
+  if (barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return barcelonaRawHikeRecords;
+  }
+  if (sydneyKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return sydneyRawHikeRecords;
+  }
+  if (tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))) {
+    return tokyoRawHikeRecords;
+  }
+  return globalRawHikeRecords;
+}

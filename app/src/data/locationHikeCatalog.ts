@@ -30,7 +30,7 @@ const bergenBaseCoordinates: Coordinates = { lat: 60.3913, lng: 5.3221 };
 const sydneyBaseCoordinates: Coordinates = { lat: -33.8688, lng: 151.2093 };
 const tokyoBaseCoordinates: Coordinates = { lat: 35.6762, lng: 139.6503 };
 
-function parseCoordinateLabel(baseLocationLabel: string): Coordinates | null {
+export function parseCoordinateLabel(baseLocationLabel: string): Coordinates | null {
   const match = baseLocationLabel
     .trim()
     .match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
@@ -955,6 +955,10 @@ const allCatalogHikes: Hike[] = [
   ...globalHikes
 ];
 const allCatalogRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(allCatalogHikes);
+
+export function getAllCatalogHikes(): Hike[] {
+  return allCatalogHikes;
+}
 
 export function getGlobalCatalogHikesForLocation(baseLocationLabel: string): Hike[] {
   const normalized = baseLocationLabel.toLowerCase();

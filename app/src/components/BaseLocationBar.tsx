@@ -57,10 +57,10 @@ export default function BaseLocationBar({
         {locating ? "Locating..." : "Use current location"}
       </button>
       {canShowSupportState && (
-        <p className={locationSupported ? "status-note status-ok" : "status-note status-warning"}>
+        <p className={locationSupported ? "status-note status-ok" : "status-note"}>
           {locationSupported
             ? "Location recognized."
-            : "Location not recognized yet. Try coordinates like 37.7749, -122.4194 or a supported city."}
+            : "Location will be looked up when you tap OK."}
         </p>
       )}
       {recentLocations.length > 0 && (

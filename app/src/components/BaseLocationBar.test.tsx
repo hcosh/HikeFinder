@@ -105,7 +105,7 @@ describe("BaseLocationBar", () => {
     const input = screen.getByPlaceholderText("Hotel, town, or area");
     await user.clear(input);
     await user.type(input, "Reykjavik");
-    expect(screen.getByText(/Location not recognized yet/)).toBeTruthy();
+    expect(screen.getByText("Location will be looked up when you tap OK.")).toBeTruthy();
 
     await user.clear(input);
     await user.type(input, "Barcelona");

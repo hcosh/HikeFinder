@@ -100,6 +100,10 @@ function toHike(baseCoordinates: Coordinates, element: OverpassElement): Hike | 
   };
 }
 
+function routeGeometryScore(hike: Hike): number {
+  return hike.trailhead.routeGeometry && hike.trailhead.routeGeometry.length > 1 ? 1 : 0;
+}
+
 async function geocodeBaseLocation(baseLocationLabel: string): Promise<Coordinates | null> {
   const normalizedLabel = baseLocationLabel.trim().toLowerCase();
   if (geocodeCache.has(normalizedLabel)) {
@@ -199,12 +203,30 @@ out tags center geom;`;
 
     const payload = (await response.json()) as { elements?: OverpassElement[] };
     const elements = payload.elements ?? [];
-    const hikes = elements
+    const rawHikes = elements
       .filter(isUsefulTrailElement)
       .map((element) => toHike(baseCoordinates, element))
-      .filter((hike): hike is Hike => Boolean(hike))
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .filter((hike, index, array) => array.findIndex((item) => item.name === hike.name) === index)
+      .filter((hike): hike is Hike => Boolean(hike));
+
+    const dedupedByName = new Map<string, Hike>();
+    for (const hike of rawHikes) {
+      const existing = dedupedByName.get(hike.name);
+      if (!existing) {
+        dedupedByName.set(hike.name, hike);
+        continue;
+      }
+
+      const shouldReplace =
+        routeGeometryScore(hike) > routeGeometryScore(existing) ||
+        (routeGeometryScore(hike) === routeGeometryScore(existing) && hike.distanceKm < existing.distanceKm);
+
+      if (shouldReplace) {
+        dedupedByName.set(hike.name, hike);
+      }
+    }
+
+    const hikes = [...dedupedByName.values()]
+      .sort((a, b) => routeGeometryScore(b) - routeGeometryScore(a) || a.distanceKm - b.distanceKm)
       .slice(0, 10);
 
     if (hikes.length >= 5) {

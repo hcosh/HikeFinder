@@ -155,16 +155,6 @@ button.secondary {
   gap: 0.6rem;
 }
 
-.trail-count-controls {
-  gap: 0.45rem;
-}
-
-.trail-count-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
 .hike-card .hike-main {
   text-align: left;
   background: transparent;

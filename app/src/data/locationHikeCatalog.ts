@@ -1,6 +1,7 @@
 import type { Hike } from "../types";
 import type { RawHikeRecord } from "./normalizeHike";
 import type { Coordinates } from "../types";
+import { hikes as mauiHikes } from "./hikes";
 
 const mauiKeywordMatches = [
   "maui",
@@ -26,6 +27,39 @@ const athensBaseCoordinates: Coordinates = { lat: 37.9838, lng: 23.7275 };
 const barcelonaBaseCoordinates: Coordinates = { lat: 41.3851, lng: 2.1734 };
 const sydneyBaseCoordinates: Coordinates = { lat: -33.8688, lng: 151.2093 };
 const tokyoBaseCoordinates: Coordinates = { lat: 35.6762, lng: 139.6503 };
+
+function parseCoordinateLabel(baseLocationLabel: string): Coordinates | null {
+  const match = baseLocationLabel
+    .trim()
+    .match(/^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+  if (!match) {
+    return null;
+  }
+
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+
+  return { lat, lng };
+}
+
+export function isKnownCatalogLocation(baseLocationLabel: string): boolean {
+  const normalized = baseLocationLabel.toLowerCase();
+  return (
+    isMauiLocation(baseLocationLabel) ||
+    isStavangerLocation(baseLocationLabel) ||
+    athensKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    barcelonaKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    sydneyKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    tokyoKeywordMatches.some((keyword) => normalized.includes(keyword)) ||
+    Boolean(parseCoordinateLabel(baseLocationLabel))
+  );
+}
 
 export function isStavangerLocation(baseLocationLabel: string): boolean {
   const normalized = baseLocationLabel.toLowerCase();
@@ -57,6 +91,11 @@ export function resolveLocationCatalog(baseLocationLabel: string): LocationCatal
 }
 
 export function getBaseCoordinatesForLocation(baseLocationLabel: string): Coordinates | null {
+  const parsedCoordinates = parseCoordinateLabel(baseLocationLabel);
+  if (parsedCoordinates) {
+    return parsedCoordinates;
+  }
+
   const normalized = baseLocationLabel.toLowerCase();
   if (isMauiLocation(baseLocationLabel)) {
     return mauiBaseCoordinates;
@@ -822,6 +861,17 @@ export const barcelonaRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(barcel
 export const sydneyRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(sydneyHikes);
 export const tokyoRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(tokyoHikes);
 
+const allCatalogHikes: Hike[] = [
+  ...mauiHikes,
+  ...stavangerHikes,
+  ...athensHikes,
+  ...barcelonaHikes,
+  ...sydneyHikes,
+  ...tokyoHikes,
+  ...globalHikes
+];
+const allCatalogRawHikeRecords: RawHikeRecord[] = hikesToRawRecords(allCatalogHikes);
+
 export function getGlobalCatalogHikesForLocation(baseLocationLabel: string): Hike[] {
   const normalized = baseLocationLabel.toLowerCase();
   if (athensKeywordMatches.some((keyword) => normalized.includes(keyword))) {
@@ -836,7 +886,10 @@ export function getGlobalCatalogHikesForLocation(baseLocationLabel: string): Hik
   if (tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return tokyoHikes;
   }
-  return globalHikes;
+  if (parseCoordinateLabel(baseLocationLabel)) {
+    return allCatalogHikes;
+  }
+  return [];
 }
 
 export function getGlobalCatalogRawRecordsForLocation(baseLocationLabel: string): RawHikeRecord[] {
@@ -853,5 +906,8 @@ export function getGlobalCatalogRawRecordsForLocation(baseLocationLabel: string)
   if (tokyoKeywordMatches.some((keyword) => normalized.includes(keyword))) {
     return tokyoRawHikeRecords;
   }
-  return globalRawHikeRecords;
+  if (parseCoordinateLabel(baseLocationLabel)) {
+    return allCatalogRawHikeRecords;
+  }
+  return [];
 }

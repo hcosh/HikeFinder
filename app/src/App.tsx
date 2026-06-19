@@ -4,7 +4,7 @@ import FiltersBar from "./components/FiltersBar";
 import HikeCard from "./components/HikeCard";
 import HikeDetail from "./components/HikeDetail";
 import { defaultHikeProvider } from "./data/providers";
-import { getBaseCoordinatesForLocation } from "./data/locationHikeCatalog";
+import { getBaseCoordinatesForLocation, isKnownCatalogLocation } from "./data/locationHikeCatalog";
 import { useGeolocation } from "./hooks/useGeolocation";
 import {
   clearTelemetryEvents,
@@ -228,6 +228,7 @@ function App() {
     qaFailures > 0
       ? `Release QA (${qaCompletedCount}/${releaseQaChecklist.length} · ${qaFailures} open)`
       : `Release QA (${qaCompletedCount}/${releaseQaChecklist.length})`;
+  const locationHasCatalogSupport = Boolean(baseLocation.coordinates) || isKnownCatalogLocation(baseLocation.label);
   const shownHikes = useMemo(
     () => filteredHikes.slice(0, displayedTrailCount),
     [displayedTrailCount, filteredHikes]
@@ -643,13 +644,15 @@ function App() {
                 >
                   3
                 </button>
-                <button
-                  type="button"
-                  className={visibleTrailCount === 5 ? "tab-active" : "secondary"}
-                  onClick={() => setVisibleTrailCount(5)}
-                >
-                  5
-                </button>
+                {filteredHikes.length > 5 && (
+                  <button
+                    type="button"
+                    className={visibleTrailCount === 5 ? "tab-active" : "secondary"}
+                    onClick={() => setVisibleTrailCount(5)}
+                  >
+                    5
+                  </button>
+                )}
                 <button
                   type="button"
                   className={visibleTrailCount === 99 ? "tab-active" : "secondary"}
@@ -675,7 +678,15 @@ function App() {
             ) : hikeResults.length === 0 ? (
               <div className="card empty-state">
                 <p>No hikes are currently available for {baseLocation.label}.</p>
-                <p>Try another nearby town or use current location to search again.</p>
+                {locationHasCatalogSupport ? (
+                  <p>Try another nearby town or use current location to search again.</p>
+                ) : (
+                  <p>
+                    We could not match that location yet. Try current location, coordinates like "37.7749,
+                    -122.4194", or a supported city such as Stavanger, Maui, Barcelona, Athens, Sydney,
+                    or Tokyo.
+                  </p>
+                )}
                 <div className="empty-state-actions">
                   <button type="button" className="secondary" onClick={requestLocation}>
                     Use current location

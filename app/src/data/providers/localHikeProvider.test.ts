@@ -56,4 +56,10 @@ describe("localHikeProvider", () => {
 
     expect(overLimit).toHaveLength(0);
   });
+
+  it("returns no hikes for unsupported manual locations instead of unrelated catalog trails", async () => {
+    const hikes = await localHikeProvider.listNearbyHikes("Reykjavik");
+
+    expect(hikes).toHaveLength(0);
+  });
 });

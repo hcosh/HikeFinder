@@ -41,6 +41,11 @@ describe("MockApiHikeProvider", () => {
     expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
   });
 
+  it("returns no hikes for unsupported manual locations", async () => {
+    const provider = new MockApiHikeProvider();
+    await expect(provider.listNearbyHikes("Reykjavik")).rejects.toThrow("no valid records");
+  });
+
   it("skips malformed records and returns valid normalized hikes", async () => {
     const provider = new MockApiHikeProvider([
       validRecord,

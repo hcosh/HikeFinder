@@ -62,6 +62,8 @@ const manyMockHikes: Hike[] = Array.from({ length: 6 }, (_, index) => ({
   }
 }));
 
+const fiveMockHikes: Hike[] = manyMockHikes.slice(0, 5);
+
 vi.mock("../data/providers", () => ({
   defaultHikeProvider: {
     listNearbyHikes: mocks.listNearbyHikesMock
@@ -257,5 +259,18 @@ describe("App recovery states", () => {
 
     await user.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByRole("heading", { name: "Mock Trail 6", level: 3 })).toBeTruthy();
+  });
+
+  it("hides the five-trail option when five equals all", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockResolvedValue(fiveMockHikes);
+
+    render(<App />);
+
+    expect(await screen.findByText(/Trails shown: 3 of 5/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "5" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "All" }));
+    expect(screen.getByRole("heading", { name: "Mock Trail 5", level: 3 })).toBeTruthy();
   });
 });

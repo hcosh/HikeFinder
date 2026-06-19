@@ -64,6 +64,42 @@ const manyMockHikes: Hike[] = Array.from({ length: 6 }, (_, index) => ({
 
 const fiveMockHikes: Hike[] = manyMockHikes.slice(0, 5);
 
+const barcelonaNearbyMockHikes: Hike[] = [
+  {
+    ...mockHikes[0],
+    id: "barcelona-1",
+    name: "Barcelona Ridge Walk",
+    rating: 4.7,
+    distanceKm: 6,
+    trailhead: {
+      ...mockHikes[0].trailhead,
+      coordinates: { lat: 41.402, lng: 2.112 }
+    }
+  },
+  {
+    ...mockHikes[0],
+    id: "barcelona-2",
+    name: "Montjuic Heights Loop",
+    rating: 4.6,
+    distanceKm: 8,
+    trailhead: {
+      ...mockHikes[0].trailhead,
+      coordinates: { lat: 41.368, lng: 2.165 }
+    }
+  },
+  {
+    ...mockHikes[0],
+    id: "barcelona-3",
+    name: "Collserola Viewpoint Path",
+    rating: 4.5,
+    distanceKm: 11,
+    trailhead: {
+      ...mockHikes[0].trailhead,
+      coordinates: { lat: 41.416, lng: 2.094 }
+    }
+  }
+];
+
 vi.mock("../data/providers", () => ({
   defaultHikeProvider: {
     listNearbyHikes: mocks.listNearbyHikesMock
@@ -272,5 +308,26 @@ describe("App recovery states", () => {
 
     await user.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByRole("heading", { name: "Mock Trail 5", level: 3 })).toBeTruthy();
+  });
+
+  it("reports a passing distance audit for a mapped location", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockResolvedValue(barcelonaNearbyMockHikes);
+
+    render(<App />);
+
+    const locationInput = await screen.findByPlaceholderText("Hotel, town, or area");
+    await user.clear(locationInput);
+    await user.type(locationInput, "Barcelona");
+    await user.click(screen.getByRole("button", { name: "OK" }));
+
+    await waitFor(() => {
+      expect(mocks.listNearbyHikesMock).toHaveBeenCalledWith("Barcelona");
+    });
+
+    await user.click(screen.getByRole("button", { name: /Release QA/ }));
+    await user.click(screen.getByRole("button", { name: "Run distance compliance audit" }));
+
+    expect(screen.getByText("Result: Pass (3 checked, 0 violations)")).toBeTruthy();
   });
 });

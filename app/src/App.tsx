@@ -300,6 +300,15 @@ function App() {
   };
 
   const markReleaseReady = () => {
+    if (distanceAuditResult?.status === "violation") {
+      setStatusMessage("Resolve distance audit violations before marking release ready.");
+      trackEvent("release_signoff_blocked_distance_violation", {
+        base: baseLocation.label,
+        violationCount: distanceAuditResult.violationCount
+      });
+      return;
+    }
+
     const signedAt = new Date().toISOString();
     setReleaseQaSignoff(signedAt);
     setReleaseQaSignoffState(signedAt);
@@ -440,6 +449,14 @@ function App() {
       ...checklistLines,
       "",
       formatTelemetrySummary(telemetrySummary),
+      "",
+      "Distance audit",
+      distanceAuditResult
+        ? `Result: ${distanceAuditResult.status} | Checked: ${distanceAuditResult.checkedCount} | Violations: ${distanceAuditResult.violationCount} | Max distance: ${distanceAuditResult.maxDistanceKm} km | Base: ${distanceAuditResult.baseLabel}`
+        : "Result: not run",
+      ...(distanceAuditResult?.violationSummaries.length
+        ? ["Violations:", ...distanceAuditResult.violationSummaries.map((summary) => `- ${summary}`)]
+        : []),
       `Sign-off: ${releaseQaSignoff ?? "Not signed"}`,
       "",
       "Recent QA runs:",
@@ -585,6 +602,7 @@ function App() {
         onApplyManualBaseLocation={applyManualBaseLocation}
         onApplyRecentBaseLocation={applyRecentBaseLocation}
         onUseCurrentLocation={requestLocation}
+        isKnownLocationLabel={isKnownCatalogLocation}
         locating={loading}
       />
 

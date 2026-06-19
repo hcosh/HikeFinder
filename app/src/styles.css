@@ -89,6 +89,14 @@ p {
   font-size: 0.95rem;
 }
 
+.status-ok {
+  color: #0c6a50;
+}
+
+.status-warning {
+  color: #8e2a25;
+}
+
 .base-location input,
 .filters input,
 .filters select {

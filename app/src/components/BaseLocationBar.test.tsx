@@ -22,6 +22,7 @@ describe("BaseLocationBar", () => {
         onApplyManualBaseLocation={onApplyManualBaseLocation}
         onApplyRecentBaseLocation={onApplyRecentBaseLocation}
         onUseCurrentLocation={() => {}}
+        isKnownLocationLabel={() => true}
         locating={false}
       />
     );
@@ -49,6 +50,7 @@ describe("BaseLocationBar", () => {
         onApplyManualBaseLocation={onApplyManualBaseLocation}
         onApplyRecentBaseLocation={onApplyRecentBaseLocation}
         onUseCurrentLocation={() => {}}
+        isKnownLocationLabel={() => true}
         locating={false}
       />
     );
@@ -73,6 +75,7 @@ describe("BaseLocationBar", () => {
         onApplyManualBaseLocation={onApplyManualBaseLocation}
         onApplyRecentBaseLocation={onApplyRecentBaseLocation}
         onUseCurrentLocation={() => {}}
+        isKnownLocationLabel={() => true}
         locating={false}
       />
     );
@@ -81,5 +84,32 @@ describe("BaseLocationBar", () => {
 
     expect(onApplyRecentBaseLocation).toHaveBeenCalledTimes(1);
     expect(onApplyRecentBaseLocation).toHaveBeenCalledWith("Kapalua");
+  });
+
+  it("shows location support status while typing", async () => {
+    const user = userEvent.setup();
+    const isKnownLocationLabel = vi.fn((value: string) => value.toLowerCase().includes("barcelona"));
+
+    render(
+      <BaseLocationBar
+        baseLocation={{ label: "Current area" }}
+        recentLocations={[]}
+        onApplyManualBaseLocation={() => {}}
+        onApplyRecentBaseLocation={() => {}}
+        onUseCurrentLocation={() => {}}
+        isKnownLocationLabel={isKnownLocationLabel}
+        locating={false}
+      />
+    );
+
+    const input = screen.getByPlaceholderText("Hotel, town, or area");
+    await user.clear(input);
+    await user.type(input, "Reykjavik");
+    expect(screen.getByText(/Location not recognized yet/)).toBeTruthy();
+
+    await user.clear(input);
+    await user.type(input, "Barcelona");
+    expect(screen.getByText("Location recognized.")).toBeTruthy();
+    expect(isKnownLocationLabel).toHaveBeenCalled();
   });
 });

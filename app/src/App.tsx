@@ -92,6 +92,7 @@ function App() {
   const [qaRunScenario, setQaRunScenario] = useState<string>(qaScenarios[0]);
   const [qaRunOutcome, setQaRunOutcome] = useState<"pass" | "fail" | "blocked">("pass");
   const [qaRunNotes, setQaRunNotes] = useState("");
+  const [editingQaRunId, setEditingQaRunId] = useState<string | null>(null);
   const [qaRunFilter, setQaRunFilter] = useState<"all" | "pass" | "fail" | "blocked">("all");
   const [statusMessage, setStatusMessage] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -201,6 +202,10 @@ function App() {
   const canMarkReleaseReady = qaAllComplete && releaseQaRuns.length > 0;
   const visibleQaRuns =
     qaRunFilter === "all" ? releaseQaRuns : releaseQaRuns.filter((run) => run.outcome === qaRunFilter);
+  const releaseQaTabLabel =
+    qaFailures > 0
+      ? `Release QA (${qaCompletedCount}/${releaseQaChecklist.length} · ${qaFailures} open)`
+      : `Release QA (${qaCompletedCount}/${releaseQaChecklist.length})`;
 
   const toggleShortlist = (id: string) => {
     setShortlistState((prev) =>
@@ -275,18 +280,72 @@ function App() {
   };
 
   const addReleaseQaRun = () => {
+    const trimmedNotes = qaRunNotes.trim();
+
+    if (editingQaRunId) {
+      setReleaseQaRunsState((current) =>
+        current.map((run) =>
+          run.id === editingQaRunId
+            ? {
+                ...run,
+                device: qaRunDevice,
+                scenario: qaRunScenario,
+                outcome: qaRunOutcome,
+                notes: trimmedNotes,
+                timestampIso: new Date().toISOString()
+              }
+            : run
+        )
+      );
+      setEditingQaRunId(null);
+      setQaRunNotes("");
+      setStatusMessage("Release QA run updated.");
+      return;
+    }
+
     const nextRun: ReleaseQaRun = {
       id: `qa-${Date.now()}`,
       device: qaRunDevice,
       scenario: qaRunScenario,
       outcome: qaRunOutcome,
-      notes: qaRunNotes.trim(),
+      notes: trimmedNotes,
       timestampIso: new Date().toISOString()
     };
 
     setReleaseQaRunsState((current) => [nextRun, ...current].slice(0, 30));
     setQaRunNotes("");
     setStatusMessage("Release QA run logged.");
+  };
+
+  const editReleaseQaRun = (runId: string) => {
+    const existing = releaseQaRuns.find((run) => run.id === runId);
+    if (!existing) {
+      return;
+    }
+    setEditingQaRunId(runId);
+    setQaRunDevice(existing.device);
+    setQaRunScenario(existing.scenario);
+    setQaRunOutcome(existing.outcome);
+    setQaRunNotes(existing.notes);
+    setStatusMessage("Editing selected QA run.");
+  };
+
+  const cancelEditingReleaseQaRun = () => {
+    setEditingQaRunId(null);
+    setQaRunDevice(qaDevices[0]);
+    setQaRunScenario(qaScenarios[0]);
+    setQaRunOutcome("pass");
+    setQaRunNotes("");
+    setStatusMessage("QA run editing cancelled.");
+  };
+
+  const deleteReleaseQaRun = (runId: string) => {
+    setReleaseQaRunsState((current) => current.filter((run) => run.id !== runId));
+    if (editingQaRunId === runId) {
+      cancelEditingReleaseQaRun();
+      return;
+    }
+    setStatusMessage("Release QA run removed.");
   };
 
   const exportReleaseQaRuns = () => {
@@ -434,7 +493,7 @@ function App() {
           className={activeTab === "qa" ? "tab-active" : "secondary"}
           onClick={() => setActiveTabState("qa")}
         >
-          Release QA ({qaCompletedCount}/{releaseQaChecklist.length})
+          {releaseQaTabLabel}
         </button>
       </section>
 
@@ -652,8 +711,13 @@ function App() {
                   />
                 </label>
                 <button type="button" className="secondary" onClick={addReleaseQaRun}>
-                  Add QA run
+                  {editingQaRunId ? "Update QA run" : "Add QA run"}
                 </button>
+                {editingQaRunId && (
+                  <button type="button" className="secondary" onClick={cancelEditingReleaseQaRun}>
+                    Cancel edit
+                  </button>
+                )}
               </section>
 
               {releaseQaRuns.length > 0 && (
@@ -680,8 +744,20 @@ function App() {
                   <ul className="qa-run-list">
                     {visibleQaRuns.slice(0, 8).map((run) => (
                       <li key={run.id}>
-                        <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
-                        {run.notes ? ` · ${run.notes}` : ""}
+                        <div className="qa-run-row">
+                          <span>
+                            <strong>{run.device}</strong> · {run.scenario} · {run.outcome}
+                            {run.notes ? ` · ${run.notes}` : ""}
+                          </span>
+                          <div className="qa-run-row-actions">
+                            <button type="button" className="secondary" onClick={() => editReleaseQaRun(run.id)}>
+                              Edit
+                            </button>
+                            <button type="button" className="secondary" onClick={() => deleteReleaseQaRun(run.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </li>
                     ))}
                   </ul>

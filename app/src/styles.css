@@ -282,6 +282,17 @@ button.secondary {
   gap: 0.5rem;
 }
 
+.qa-run-row {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.qa-run-row-actions {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (min-width: 900px) {
   .layout {
     grid-template-columns: 1fr 1fr;

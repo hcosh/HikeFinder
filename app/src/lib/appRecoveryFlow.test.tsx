@@ -194,6 +194,7 @@ describe("App recovery states", () => {
     expect(screen.getByText("Logged QA runs: 1 (1 failures)")).toBeTruthy();
     expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
     expect(screen.getByText("QA outcomes: 0 pass · 1 fail · 0 blocked")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Release QA \(5\/5 · 1 open\)/ })).toBeTruthy();
 
     await user.selectOptions(screen.getByLabelText("Run filter"), "fail");
     expect(screen.getByText(/Map handoff failed in split view/)).toBeTruthy();
@@ -205,6 +206,10 @@ describe("App recovery states", () => {
 
     await user.click(screen.getByRole("button", { name: "Mark release ready" }));
     expect(screen.queryByText("Last sign-off: Not signed")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Logged QA runs: 0 (0 failures)")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Release QA \(5\/5\)$/ })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Copy QA summary" }));
     const copiedMessage = screen.queryByText("QA summary copied to clipboard.");

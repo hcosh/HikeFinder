@@ -18,4 +18,15 @@ describe("localHikeProvider", () => {
       expect.arrayContaining(["Waihee Ridge Trail", "Kapalua Coastal Trail", "Makawao Forest Loop"])
     );
   });
+
+  it("returns global catalog hikes for non-Maui/non-Stavanger base locations", async () => {
+    const hikes = await localHikeProvider.listNearbyHikes("Barcelona");
+
+    expect(hikes.map((hike) => hike.name)).toEqual(
+      expect.arrayContaining(["Montserrat Sant Jeroni Trail", "Royal National Coast Track"])
+    );
+    expect(hikes.map((hike) => hike.name)).not.toEqual(
+      expect.arrayContaining(["Waihee Ridge Trail"])
+    );
+  });
 });

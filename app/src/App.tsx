@@ -75,6 +75,7 @@ function App() {
   const [hikesLoading, setHikesLoading] = useState(false);
   const [hikesError, setHikesError] = useState("");
   const [filters, setFilters] = useState<HikeFilters>(defaultFilters);
+  const [visibleTrailCount, setVisibleTrailCount] = useState<3 | 5 | 99>(5);
   const [selectedHikeId, setSelectedHikeId] = useState<string>("");
   const [shortlist, setShortlistState] = useState<string[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(getActiveTab());
@@ -549,6 +550,34 @@ function App() {
                 ? "Your shortlist"
                 : "Release QA checklist"}
           </h2>
+          {activeTab === "browse" && filteredHikes.length > 3 && (
+            <section className="card trail-count-controls" aria-label="Trail count controls">
+              <p>Trails shown</p>
+              <div className="trail-count-buttons">
+                <button
+                  type="button"
+                  className={visibleTrailCount === 3 ? "tab-active" : "secondary"}
+                  onClick={() => setVisibleTrailCount(3)}
+                >
+                  3
+                </button>
+                <button
+                  type="button"
+                  className={visibleTrailCount === 5 ? "tab-active" : "secondary"}
+                  onClick={() => setVisibleTrailCount(5)}
+                >
+                  5
+                </button>
+                <button
+                  type="button"
+                  className={visibleTrailCount === 99 ? "tab-active" : "secondary"}
+                  onClick={() => setVisibleTrailCount(99)}
+                >
+                  All
+                </button>
+              </div>
+            </section>
+          )}
           {activeTab === "browse" && hikesLoading ? (
             <div className="card empty-state">
               <p>Loading hikes for {baseLocation.label}...</p>
@@ -598,7 +627,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              filteredHikes.map((hike) => (
+              filteredHikes.slice(0, visibleTrailCount).map((hike) => (
                 <HikeCard
                   key={hike.id}
                   hike={hike}

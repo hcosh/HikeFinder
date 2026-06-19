@@ -1,6 +1,10 @@
 import type { Hike, HikeProvider } from "../../types";
 import { normalizeRawHike, type RawHikeRecord } from "../normalizeHike";
-import { isStavangerLocation, stavangerRawHikeRecords } from "../locationHikeCatalog";
+import {
+  globalRawHikeRecords,
+  resolveLocationCatalog,
+  stavangerRawHikeRecords
+} from "../locationHikeCatalog";
 
 const rawHikeRecords: RawHikeRecord[] = [
   {
@@ -41,6 +45,46 @@ const rawHikeRecords: RawHikeRecord[] = [
       qualityConfidence: 0.93,
       source: "Destination trail map"
     }
+  },
+  {
+    id: "lahaina-pali",
+    title: "Lahaina Pali Trail",
+    rating: 4.6,
+    reviewCount: 890,
+    difficulty: "hard",
+    estimatedHours: 4.5,
+    distanceKm: 8.7,
+    highlights: ["Historic route", "Sweeping coast", "Windy ridgelines"],
+    description:
+      "A rugged, exposed trail with steep sections and broad coastal views. Bring sun protection.",
+    trailhead: {
+      name: "Lahaina Pali Trail (Maalaea side)",
+      lat: 20.7905,
+      lng: -156.4978,
+      parkingNote: "Limited shoulder parking.",
+      qualityConfidence: 0.88,
+      source: "Hiking community dataset"
+    }
+  },
+  {
+    id: "makawao-forest-loop",
+    title: "Makawao Forest Loop",
+    rating: 4.5,
+    reviewCount: 540,
+    difficulty: "easy",
+    estimatedHours: 2,
+    distanceKm: 5.3,
+    highlights: ["Cool forest", "Shaded path", "Great for warm days"],
+    description:
+      "A mellow forest route with shade and softer terrain, ideal for a low-stress morning.",
+    trailhead: {
+      name: "Makawao Forest Reserve Entrance",
+      lat: 20.8543,
+      lng: -156.3043,
+      parkingNote: "Parking lot at reserve entrance.",
+      qualityConfidence: 0.91,
+      source: "State reserve metadata"
+    }
   }
 ];
 
@@ -55,7 +99,14 @@ export class MockApiHikeProvider implements HikeProvider {
       throw new Error("Mock API unavailable");
     }
 
-    const selectedRecords = this.records ?? (isStavangerLocation(baseLocationLabel) ? stavangerRawHikeRecords : rawHikeRecords);
+    const catalog = resolveLocationCatalog(baseLocationLabel);
+    const selectedRecords =
+      this.records ??
+      (catalog === "maui"
+        ? rawHikeRecords
+        : catalog === "stavanger"
+          ? stavangerRawHikeRecords
+          : globalRawHikeRecords);
 
     const normalized = selectedRecords.flatMap((record) => {
       try {

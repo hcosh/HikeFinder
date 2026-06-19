@@ -44,6 +44,24 @@ const mockHikes: Hike[] = [
   }
 ];
 
+const manyMockHikes: Hike[] = Array.from({ length: 6 }, (_, index) => ({
+  id: `mock-hike-${index + 1}`,
+  name: `Mock Trail ${index + 1}`,
+  summary: "Generated test trail",
+  difficulty: index % 2 === 0 ? "easy" : "moderate",
+  rating: 4.2,
+  reviews: 100 + index,
+  hours: 2 + index * 0.2,
+  distanceKm: 4 + index,
+  highlights: ["Viewpoint", "Forest"],
+  trailhead: {
+    label: `Trailhead ${index + 1}`,
+    coordinates: { lat: 40 + index * 0.01, lng: -120 - index * 0.01 },
+    qualityConfidence: 0.9,
+    source: "mock"
+  }
+}));
+
 vi.mock("../data/providers", () => ({
   defaultHikeProvider: {
     listNearbyHikes: mocks.listNearbyHikesMock
@@ -215,5 +233,23 @@ describe("App recovery states", () => {
     const copiedMessage = screen.queryByText("QA summary copied to clipboard.");
     const unavailableMessage = screen.queryByText("Clipboard is unavailable on this device.");
     expect(Boolean(copiedMessage || unavailableMessage)).toBe(true);
+  });
+
+  it("lets users increase visible trail count beyond three", async () => {
+    const user = userEvent.setup();
+    mocks.listNearbyHikesMock.mockResolvedValue(manyMockHikes);
+
+    render(<App />);
+
+    expect(await screen.findByText("Trails shown")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "3" }));
+    expect(screen.queryByRole("heading", { name: "Mock Trail 4", level: 3 })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "5" }));
+    expect(screen.getByRole("heading", { name: "Mock Trail 5", level: 3 })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "All" }));
+    expect(screen.getByRole("heading", { name: "Mock Trail 6", level: 3 })).toBeTruthy();
   });
 });

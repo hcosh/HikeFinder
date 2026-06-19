@@ -31,6 +31,16 @@ describe("MockApiHikeProvider", () => {
     expect(hikes[0]?.trailhead.coordinates.lat).toBeGreaterThan(58);
   });
 
+  it("returns global catalog hikes for unrelated base locations", async () => {
+    const provider = new MockApiHikeProvider();
+    const hikes = await provider.listNearbyHikes("Athens");
+
+    expect(hikes.map((hike) => hike.name)).toEqual(
+      expect.arrayContaining(["Lycabettus Hill Loop", "Sugarloaf Foothills Loop"])
+    );
+    expect(hikes.map((hike) => hike.name)).not.toEqual(expect.arrayContaining(["Waihee Ridge Trail"]));
+  });
+
   it("skips malformed records and returns valid normalized hikes", async () => {
     const provider = new MockApiHikeProvider([
       validRecord,
